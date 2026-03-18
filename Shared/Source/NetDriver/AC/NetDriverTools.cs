@@ -22,44 +22,38 @@ namespace Shared.Source.NetDriver.AC
 
             int part = 1024 * 1024 * 32;                                          // размер одного пакета в среднем
 
-            while (fileSize % part != 0) part--;
-
-            int piceCount =  (int)(fileSize / part);
+            int piceCount = (int)((fileSize + part - 1) / part);
 
             var configMessage = new Message(null, ToBinary.Utf16(fileName), piceCount);
 
             Guid mainGuid = configMessage.msgsuid;
 
             var firstAns = await SendReqMessageAsync(sock, configMessage);
-            if (firstAns != null)
+            if (firstAns != null && FromBinary.Utf16(firstAns.content) == "ready")
             {
-                Dictionary<Message, Task> sending = new();
-
-
                 using (FileStream fs = new FileStream(pathToFile, FileMode.Open, FileAccess.Read))
                 {
                     byte[] buffer = new byte[part];
                     int sn = 0;
+                    int bytesRead;
 
-                    while (fs.Read(buffer, 0, buffer.Length) > 0)
+                    while ((bytesRead = await fs.ReadAsync(buffer, 0, buffer.Length)) > 0)
                     {
-                        var msg = new Message(mainGuid, buffer, sn);
-                        sending.Add(msg, SendReqMessageAsync(sock, msg));
-                        sn++;
-                    }
-                }
-
-                while (sending.Count > 0)
-                {
-                    var completed = await Task.WhenAny(sending.Values);
-
-                    var kvp = sending.FirstOrDefault(x => x.Value == completed);
-                    if (completed == null && kvp.Key != null)
-                    {
-                        if (sending.Remove(kvp.Key))
-                            sending.Add(kvp.Key, SendReqMessageAsync(sock, kvp.Key));
+                        byte[] dataToSend;
+                        if (bytesRead == buffer.Length)
+                        {
+                            dataToSend = buffer;
+                        }
                         else
-                            DebugTool.Log(new DebugTool.log(DebugTool.log.Level.Error, "code is dead 0__o", LOGFOLDER));
+                        {
+                            dataToSend = new byte[bytesRead];
+                            Array.Copy(buffer, 0, dataToSend, 0, bytesRead);
+                        }
+
+
+                        var msg = new Message(mainGuid, dataToSend, sn);
+                        SendAnsMessageAsync(sock, msg);
+                        sn++;
                     }
                 }
             }

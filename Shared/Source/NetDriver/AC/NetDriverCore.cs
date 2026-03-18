@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using AVcontrol;
+using Microsoft.Extensions.Logging;
 using Shared.Source.tools;
 using System;
 using System.Collections.Concurrent;
@@ -17,6 +18,7 @@ namespace Shared.Source.NetDriver.AC
     {
         protected Func<Request, Task<byte[]?>>? processor;
         protected readonly ConcurrentDictionary<Guid, Request> _pendingRequests = new();
+        protected readonly ConcurrentDictionary<Guid, MassiveContentBuilder> _contentBuilder = new();
         protected readonly Channel<Request> _dispatchChannel = Channel.CreateUnbounded<Request>();
         protected readonly Channel<Request> _incomingChannel = Channel.CreateUnbounded<Request>();
         protected readonly ConcurrentBag<Task> _backgroundTasks = new();
@@ -89,14 +91,44 @@ namespace Shared.Source.NetDriver.AC
 
 
 
+                    if (rq.message.serialNumber != -1)
+                    {
+                        if (_contentBuilder.TryGetValue(rq.message.msgsuid, out var pkgBuilder))
+                        {
+                            await pkgBuilder.WritePackage(rq.message);
+
+                            if (pkgBuilder.IsCompleted)
+                            {
+                                pkgBuilder.Dispose();
+                                _contentBuilder.TryRemove(rq.message.msgsuid, out _);
+                            }
+                        }
+                        else
+                        {
+                            if (_contentBuilder.TryAdd(rq.message.msgsuid, new MassiveContentBuilder(
+                                    rq.message.msgsuid,
+                                    rq.message.serialNumber,
+                                    FromBinary.Utf16(rq.message.content
+                                )
+                            )))
+                            {
+                                SendAnsMessageAsync(sock, new Message(rq.message.msgsuid, ToBinary.Utf16("ready")));
+                            }
+                            else
+                            {
+                                DebugTool.Log(new DebugTool.log(DebugTool.log.Level.Error, "ListeningSocket: can`t add message to dict", LOGFOLDER));
+                            }
+                        }
+                        continue;
+                    }
+
                     if (_pendingRequests.TryGetValue(rq.message.msgsuid, out var rqOut))
                     {
                         rqOut.GetAnswer(rq);
+                        continue;
                     }
-                    else
-                    {
-                        _incomingChannel.Writer.TryWrite(rq);
-                    }
+
+                    _incomingChannel.Writer.TryWrite(rq);
                 }
             }
             catch (Exception ex)
@@ -138,9 +170,9 @@ namespace Shared.Source.NetDriver.AC
                 }
             }
         }
-        public void SendAnsMessageAsync(Socket sock, byte[] content, Guid msgsuid)                                // не ожидаем ответа
+        public void SendAnsMessageAsync(Socket sock, Message msg)                                // не ожидаем ответа
         {
-            var rq = new Request(new Message(msgsuid, content), sock);
+            var rq = new Request(msg, sock);
 
             _dispatchChannel.Writer.TryWrite(rq);
         }
@@ -170,11 +202,9 @@ namespace Shared.Source.NetDriver.AC
             {
                 try
                 {
-                    if (processor == null) continue;
+                    if (processor == null) continue; //                                 процссор должен сам ответить на запрос, если то требуется.
                     var res = await processor(req);
                     if (res == null) continue;
-
-                    SendAnsMessageAsync(req.socket, res, req.message.msgsuid);
                 }
                 catch (Exception ex)
                 {
