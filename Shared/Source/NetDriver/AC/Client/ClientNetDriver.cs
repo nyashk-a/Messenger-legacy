@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Shared.Source.NetDriver.AC.Client
 {
-    public class ClientNetDriver : NetDriverCore
+    public class ClientNetDriver : INetdriverCore
     {
         public readonly Socket socket = new(
             AddressFamily.InterNetwork, 
@@ -15,7 +15,7 @@ namespace Shared.Source.NetDriver.AC.Client
             ProtocolType.Tcp
         );
 
-        public ClientNetDriver(IPAddress domain, int port, Func<Request, Task<byte[]?>> Processor) 
+        public ClientNetDriver(IPAddress domain, int port, Func<Request, Task> Processor) 
         {
             socket.ConnectAsync(new IPEndPoint(domain, port));
             InitalizeNetDriver();

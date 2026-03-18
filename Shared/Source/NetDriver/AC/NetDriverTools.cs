@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Shared.Source.NetDriver.AC
 {
-    public partial class NetDriverCore
+    public abstract partial class INetdriverCore
     {
         public async Task SendMassiveMesage(Socket sock, string pathToFile)
         {

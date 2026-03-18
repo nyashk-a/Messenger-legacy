@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Shared.Source.tools;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -9,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Shared.Source.NetDriver.AC.Server
 {
-    public class ServerNetDriver : NetDriverCore
+    public class ServerNetDriver : INetdriverCore
     {
         public readonly Socket socket = new(
             AddressFamily.InterNetwork, 
@@ -18,13 +19,13 @@ namespace Shared.Source.NetDriver.AC.Server
         );
 
         private readonly ConcurrentDictionary<Socket, Task> Users = new();
-        public ServerNetDriver(Func<Request, Task<byte[]?>> Processor)
+        public ServerNetDriver(Func<Request, Task> Processor, IPEndPoint endPoint)
         {
             processor = Processor;
             InitalizeNetDriver();
 
 
-            socket.Bind(new IPEndPoint(IPAddress.Any, 121221));
+            socket.Bind(endPoint);
             socket.Listen();
 
             _backgroundTasks.Add(AceptingConnections());
@@ -41,13 +42,20 @@ namespace Shared.Source.NetDriver.AC.Server
 
         public override void Shutdown()
         {
-            foreach (var s in Users)
+            try
             {
-                s.Value.Dispose();
-                s.Key.Close();
-                s.Key.Dispose();
+                foreach (var s in Users)
+                {
+                    s.Value.Dispose();
+                    s.Key.Close();
+                    s.Key.Dispose();
+                }
+                base.Shutdown();
             }
-            base.Shutdown();
+            catch (Exception e)
+            {
+                DebugTool.Log(new DebugTool.log(DebugTool.log.Level.Error, e.Message, LOGFOLDER));
+            }
         }
     }
 }
