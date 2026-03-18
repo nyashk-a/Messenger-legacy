@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using AVcontrol;
+using Microsoft.Extensions.Logging;
 using Shared.Source.tools;
 using System;
 using System.Collections.Concurrent;
@@ -13,10 +14,11 @@ using System.Xml.Linq;
 
 namespace Shared.Source.NetDriver.AC
 {
-    public class NetDriverCore
+    public partial class NetDriverCore
     {
         protected Func<Request, Task<byte[]?>>? processor;
-        protected readonly ConcurrentDictionary<Guid, Request> _messageDict = new();
+        protected readonly ConcurrentDictionary<Guid, Request> _pendingRequests = new();
+        protected readonly ConcurrentDictionary<Guid, MassiveContentBuilder> _contentBuilder = new();
         protected readonly Channel<Request> _dispatchChannel = Channel.CreateUnbounded<Request>();
         protected readonly Channel<Request> _incomingChannel = Channel.CreateUnbounded<Request>();
         protected readonly ConcurrentBag<Task> _backgroundTasks = new();
@@ -60,11 +62,11 @@ namespace Shared.Source.NetDriver.AC
             {
                 while (true)
                 {
-                    var lenghtBuffer = new byte[8];
+                    var lenghtBuffer = new byte[12];
                     int read = 0;
                     while (read < lenghtBuffer.Length)
                     {
-                        read += await sock.ReceiveAsync(lenghtBuffer.AsMemory(read, 8 - read));
+                        read += await sock.ReceiveAsync(lenghtBuffer.AsMemory(read, 12 - read));
                     }
 
                     var sc = Message.PartialParse(lenghtBuffer);
@@ -75,29 +77,58 @@ namespace Shared.Source.NetDriver.AC
                     }
 
 
-                    var mainBuffer = new byte[sc.size + 4 + 4];
+                    var mainBuffer = new byte[sc.size + 4 + 4 + 4];
                     Buffer.BlockCopy(lenghtBuffer, 0, mainBuffer, 0, lenghtBuffer.Length);
 
 
                     read = 0;
                     while (read < mainBuffer.Length)
                     {
-                        read += await sock.ReceiveAsync(mainBuffer.AsMemory(8 + read, mainBuffer.Length - (8 + read)));
+                        read += await sock.ReceiveAsync(mainBuffer.AsMemory(12 + read, mainBuffer.Length - (12 + read)));
                     }
 
                     var rq = new Request(new Message(mainBuffer), sock);
-                    rq.appointment = Appointment.Read;
 
 
 
-                    if (_messageDict.TryGetValue(rq.message.msgsuid, out var rqOut))
+                    if (rq.message.serialNumber != -1)
+                    {
+                        if (_contentBuilder.TryGetValue(rq.message.msgsuid, out var pkgBuilder))
+                        {
+                            await pkgBuilder.WritePackage(rq.message);
+
+                            if (pkgBuilder.IsCompleted)
+                            {
+                                pkgBuilder.Dispose();
+                                _contentBuilder.TryRemove(rq.message.msgsuid, out _);
+                            }
+                        }
+                        else
+                        {
+                            if (_contentBuilder.TryAdd(rq.message.msgsuid, new MassiveContentBuilder(
+                                    rq.message.msgsuid,
+                                    rq.message.serialNumber,
+                                    FromBinary.Utf16(rq.message.content
+                                )
+                            )))
+                            {
+                                SendAnsMessageAsync(sock, new Message(rq.message.msgsuid, ToBinary.Utf16("ready")));
+                            }
+                            else
+                            {
+                                DebugTool.Log(new DebugTool.log(DebugTool.log.Level.Error, "ListeningSocket: can`t add message to dict", LOGFOLDER));
+                            }
+                        }
+                        continue;
+                    }
+
+                    if (_pendingRequests.TryGetValue(rq.message.msgsuid, out var rqOut))
                     {
                         rqOut.GetAnswer(rq);
+                        continue;
                     }
-                    else
-                    {
-                        _incomingChannel.Writer.TryWrite(rq);
-                    }
+
+                    _incomingChannel.Writer.TryWrite(rq);
                 }
             }
             catch (Exception ex)
@@ -108,14 +139,14 @@ namespace Shared.Source.NetDriver.AC
         }
 
 
-        public async Task<Message?> SendReqMessageAsync(Socket sock, byte[] content)                 // ожидаем ответ
+        public async Task<Message?> SendReqMessageAsync(Socket sock, Message msg)                 // ожидаем ответ
         {
             using var cts = CancellationTokenSource.CreateLinkedTokenSource();
             cts.CancelAfter(TimeSpan.FromSeconds(30));
 
             var tcs = new TaskCompletionSource<Request>();
-            var rq = new Request(new Message(null, content), sock, tcs);
-            if (!_messageDict.TryAdd(rq.message.msgsuid, rq))
+            var rq = new Request(msg, sock, tcs);
+            if (!_pendingRequests.TryAdd(rq.message.msgsuid, rq))
             {
                 DebugTool.Log(new DebugTool.log(DebugTool.log.Level.Error, "SendReqMessageAsync: can`t add message to dict", LOGFOLDER));
             }
@@ -128,20 +159,20 @@ namespace Shared.Source.NetDriver.AC
                 var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(-1, cts.Token));
                 if (completedTask == tcs.Task)
                 {
-                    _messageDict.TryRemove(rq.message.msgsuid, out _);
+                    _pendingRequests.TryRemove(rq.message.msgsuid, out _);
                     return (await tcs.Task).message;
                 }
                 else
                 {
-                    _messageDict.TryRemove(rq.message.msgsuid, out _);
+                    _pendingRequests.TryRemove(rq.message.msgsuid, out _);
                     DebugTool.Log(new DebugTool.log(DebugTool.log.Level.Warning, "Response timeout", LOGFOLDER));
                     return null;
                 }
             }
         }
-        public void SendAnsMessageAsync(Socket sock, byte[] content, Guid msgsuid)                                // не ожидаем ответа
+        public void SendAnsMessageAsync(Socket sock, Message msg)                                // не ожидаем ответа
         {
-            var rq = new Request(new Message(msgsuid, content), sock);
+            var rq = new Request(msg, sock);
 
             _dispatchChannel.Writer.TryWrite(rq);
         }
@@ -171,11 +202,9 @@ namespace Shared.Source.NetDriver.AC
             {
                 try
                 {
-                    if (processor == null) continue;
+                    if (processor == null) continue; //                                 процссор должен сам ответить на запрос, если то требуется.
                     var res = await processor(req);
                     if (res == null) continue;
-
-                    SendAnsMessageAsync(req.socket, res, req.message.msgsuid);
                 }
                 catch (Exception ex)
                 {

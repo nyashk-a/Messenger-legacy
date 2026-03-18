@@ -11,7 +11,6 @@ namespace Shared.Source.NetDriver.AC
     {
         public Message message;
         public Socket socket;
-        public Appointment appointment;
 
         public Request(Message msg, Socket sock, TaskCompletionSource<Request>? tcs=null)
         {
