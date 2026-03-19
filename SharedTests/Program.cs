@@ -13,16 +13,20 @@ namespace JabServer //                          DEMO
             var a = new Server();
             var b = new Client();
 
-            while (true)
-            {
-                Console.Write("client message >");
-                string inp = Console.ReadLine();
-                if (inp == "/q") break;
 
-                Message answer = await b.clin.SendReqMessageAsync(b.clin.socket, new Message(Guid.NewGuid(), ToBinary.Utf16(inp)));
-                if (answer != null)
-                    Console.WriteLine($"server answer: {FromBinary.Utf16(answer.content)}");
-            }
+            //await b.clin.SendMassiveMesage(b.clin.socket, "C:\\Users\\suzi\\Downloads\\Telegram Desktop.zip");
+            await b.clin.SendMassiveMesage(b.clin.socket, "C:\\Users\\suzi\\Documents\\projects\\csP\\Messenger\\SharedTests\\IMG_4003.PNG");
+            //                                                      EXAMPLE to simple send
+            //while (true)
+            //{
+            //Console.Write("client message >");
+            //string inp = Console.ReadLine();
+            //if (inp == "/q") break;
+
+            //Message answer = await b.clin.SendReqMessageAsync(b.clin.socket, new Message(Guid.NewGuid(), ToBinary.Utf16(inp)));
+            //if (answer != null)
+            //    Console.WriteLine($"server answer: {FromBinary.Utf16(answer.content)}");
+            //}
             a.Dispose();
             b.Dispose();
         }
@@ -40,10 +44,12 @@ namespace JabServer //                          DEMO
         }
         public async Task Proc(Request req)
         {
-            Console.WriteLine($"client doble message: {FromBinary.Utf16(req.message.content)}");
-            Console.Write("server answer >");
-            string answer = Console.ReadLine();
-            serv.SendAnsMessageAsync(req.socket, new Message(req.message.msgsuid, ToBinary.Utf16(answer)));
+            //                                                      EXAMPLE to simple send
+
+            //Console.WriteLine($"client doble message: {FromBinary.Utf16(req.message.content)}");
+            //Console.Write("server answer >");
+            //string answer = Console.ReadLine();
+            //serv.SendAnsMessageAsync(req.socket, new Message(req.message.msgsuid, ToBinary.Utf16(answer)));
 
 
             //                                  EXAMPLE how to do
@@ -78,8 +84,9 @@ namespace JabServer //                          DEMO
         }
         public async Task Proc(Request req)
         {
-            Console.Write("message by server: ");
-            Console.WriteLine(FromBinary.Utf16(req.message.content));
+            //                                                      EXAMPLE to simple send
+            //Console.Write("message by server: ");
+            //Console.WriteLine(FromBinary.Utf16(req.message.content));
         }
         public void Dispose()
         {

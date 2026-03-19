@@ -65,7 +65,7 @@ namespace Shared.Source.NetDriver.AC
                     actualNumder = nMsg.serialNumber + 1;
                 }
 
-                if (actualNumder + 1 == expectedQuantity)
+                if (actualNumder == expectedQuantity)
                 {
                     _queueToWrite.Writer.Complete();
                 }
