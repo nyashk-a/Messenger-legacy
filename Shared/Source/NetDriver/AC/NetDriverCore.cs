@@ -109,6 +109,7 @@ namespace Shared.Source.NetDriver.AC
                             if (pkgBuilder.IsCompleted)
                             {
                                 pkgBuilder.Dispose();
+                                Console.WriteLine("try remove builder");
                                 _contentBuilder.TryRemove(rq.message.msgsuid, out _);
                             }
                         }

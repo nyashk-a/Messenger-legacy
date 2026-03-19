@@ -15,18 +15,22 @@ namespace JabServer //                          DEMO
 
 
             //await b.clin.SendMassiveMesage(b.clin.socket, "C:\\Users\\suzi\\Downloads\\Telegram Desktop.zip");
-            await b.clin.SendMassiveMesage(b.clin.socket, "C:\\Users\\suzi\\Documents\\projects\\csP\\Messenger\\SharedTests\\IMG_4003.PNG");
-            //                                                      EXAMPLE to simple send
-            //while (true)
-            //{
-            //Console.Write("client message >");
-            //string inp = Console.ReadLine();
-            //if (inp == "/q") break;
+            while (true)
+            {
+                await b.clin.SendMassiveMesage(b.clin.socket, "C:\\Users\\suzi\\Pictures\\wallpapers\\wallhaven-1pyqx3.png", 1024);
+                //                                                      EXAMPLE to simple send
+                //while (true)
+                //{
+                //Console.Write("client message >");
+                //string inp = Console.ReadLine();
+                //if (inp == "/q") break;
 
-            //Message answer = await b.clin.SendReqMessageAsync(b.clin.socket, new Message(Guid.NewGuid(), ToBinary.Utf16(inp)));
-            //if (answer != null)
-            //    Console.WriteLine($"server answer: {FromBinary.Utf16(answer.content)}");
-            //}
+                //Message answer = await b.clin.SendReqMessageAsync(b.clin.socket, new Message(Guid.NewGuid(), ToBinary.Utf16(inp)));
+                //if (answer != null)
+                //    Console.WriteLine($"server answer: {FromBinary.Utf16(answer.content)}");
+                //}
+                Console.ReadKey();
+            }
             a.Dispose();
             b.Dispose();
         }

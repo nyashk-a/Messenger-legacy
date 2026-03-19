@@ -21,12 +21,13 @@ namespace Shared.Source.NetDriver.AC
 
         public readonly string pathToFolder;
         public readonly Guid FileGuid;
-        public bool IsCompleted { get => bgTask.IsCompleted; }
+        public bool IsCompleted = false;
 
 
 
         public MassiveContentBuilder(Guid fileGuid, int expectedQuantity, string fileName)
         {
+            Console.WriteLine($"expected quantity: {expectedQuantity}");
             this.expectedQuantity = expectedQuantity;
             FileGuid = fileGuid;
             pathToFolder = Path.Combine(swapDir, fileName);
@@ -39,7 +40,8 @@ namespace Shared.Source.NetDriver.AC
         }
         public async Task WritePackage(Message msg)
         {
-            if (msg.serialNumber == actualNumder)
+            Console.WriteLine($"Get >{msg.serialNumber} ({actualNumder})");
+            if (msg.serialNumber >= actualNumder)
             {
                 _queueToWrite.Writer.TryWrite(msg);
             }
@@ -55,27 +57,36 @@ namespace Shared.Source.NetDriver.AC
 
             await foreach (var msg in reader.ReadAllAsync())
             {
-                await _filewriter.WriteAsync(msg.content);
-                actualNumder = msg.serialNumber + 1;
+                Console.WriteLine($"                    {actualNumder} : {expectedQuantity}");
+                if (msg.serialNumber == actualNumder)
+                {
+                    await _filewriter.WriteAsync(msg.content);
+                    actualNumder = actualNumder + 1;
+                }
 
                 while (_hash.TryGetValue(actualNumder, out var nMsg))
                 {
                     await _filewriter.WriteAsync(nMsg.content);
                     _hash.TryRemove(actualNumder, out _);
-                    actualNumder = nMsg.serialNumber + 1;
+                    actualNumder = actualNumder + 1;
+                    Console.WriteLine($"                    {actualNumder} : {expectedQuantity}");
                 }
 
+                Console.WriteLine($"                    {actualNumder} : {expectedQuantity}");
                 if (actualNumder == expectedQuantity)
                 {
+                    Console.WriteLine($"                fin write");
                     _queueToWrite.Writer.Complete();
+                    IsCompleted = true;
+                    return;
                 }
             }
         }
 
         public void Dispose()
         {
+            Console.WriteLine($"                fin write");
             _queueToWrite.Writer.TryComplete();
-            bgTask.Wait();
             _filewriter?.Close();
             _filewriter?.Dispose();
         }
