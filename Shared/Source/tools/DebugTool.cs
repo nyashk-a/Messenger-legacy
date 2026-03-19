@@ -26,7 +26,6 @@ namespace Shared.Source.tools
 
         public static void Log(log l)
         {
-            Console.WriteLine($"Debug Tool {l.l}: {l.m} ({Path.Combine(path, l.d)})");
             logs.Writer.TryWrite(l);
         }
 

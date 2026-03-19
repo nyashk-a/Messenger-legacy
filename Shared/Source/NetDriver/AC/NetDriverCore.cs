@@ -34,6 +34,7 @@ namespace Shared.Source.NetDriver.AC
                 DebugTool.StartDebugTool();
                 _backgroundTasks.Add(DispatchQueueController(_cts.Token));
                 _backgroundTasks.Add(IncomingQueueController(_cts.Token));
+                _backgroundTasks.Add(DisposeBuilderController(_cts.Token));
             }
             catch (Exception ex)
             {
@@ -44,18 +45,27 @@ namespace Shared.Source.NetDriver.AC
         {
             try
             {
-                DebugTool.Shutdown().Wait();
                 _cts.Cancel();
-                foreach (var bt in _backgroundTasks)
-                {
-                    bt.Dispose();
-                }
+
+                Task.WhenAll(_backgroundTasks).Wait(TimeSpan.FromSeconds(10));
+
                 _dispatchChannel.Writer.TryComplete();
                 _incomingChannel.Writer.TryComplete();
-                foreach (var bt in _backgroundTasks)
+
+                foreach (var builder in _contentBuilder.Values)
                 {
-                    bt.Dispose();
+                    builder.Dispose();
                 }
+                _contentBuilder.Clear();
+
+                foreach (var req in _pendingRequests.Values)
+                {
+                    req.rHook?.TrySetCanceled();
+                }
+                _pendingRequests.Clear();
+
+                DebugTool.Shutdown().Wait(TimeSpan.FromSeconds(2));
+                _cts.Dispose();
             }
             catch (Exception e)
             {
@@ -105,17 +115,11 @@ namespace Shared.Source.NetDriver.AC
                         if (_contentBuilder.TryGetValue(rq.message.msgsuid, out var pkgBuilder))
                         {
                             await pkgBuilder.WritePackage(rq.message);
-
-                            if (pkgBuilder.IsCompleted)
-                            {
-                                pkgBuilder.Dispose();
-                                Console.WriteLine("try remove builder");
-                                _contentBuilder.TryRemove(rq.message.msgsuid, out _);
-                            }
                         }
                         else
                         {
                             if (_contentBuilder.TryAdd(rq.message.msgsuid, new MassiveContentBuilder(
+                                    ReportClosure,
                                     rq.message.msgsuid,
                                     rq.message.serialNumber,
                                     FromBinary.Utf16(rq.message.content

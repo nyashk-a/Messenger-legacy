@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -15,33 +16,38 @@ namespace Shared.Source.NetDriver.AC
         private readonly ConcurrentDictionary<int, Message> _hash = new();
         private readonly Channel<Message> _queueToWrite;
         private readonly int expectedQuantity;
-        private readonly Task bgTask;
+        private readonly CancellationTokenSource _cts = new();
+        private readonly Task _bgTask;
+        private bool _disposed = false;
         private readonly FileStream _filewriter;
         private int actualNumder = 0;
+        private readonly Action<MassiveContentBuilder> _disposeSelf;
 
         public readonly string pathToFolder;
         public readonly Guid FileGuid;
-        public bool IsCompleted = false;
 
 
 
-        public MassiveContentBuilder(Guid fileGuid, int expectedQuantity, string fileName)
+        public MassiveContentBuilder(Action<MassiveContentBuilder> disposeSelf, Guid fileGuid, int expectedQuantity, string fileName)
         {
-            Console.WriteLine($"expected quantity: {expectedQuantity}");
+            _disposeSelf = disposeSelf;
+
             this.expectedQuantity = expectedQuantity;
             FileGuid = fileGuid;
             pathToFolder = Path.Combine(swapDir, fileName);
             _queueToWrite = Channel.CreateBounded<Message>(expectedQuantity);
 
-            bgTask = WritingContent();
+            _bgTask = WritingContent(_cts.Token);
 
             Directory.CreateDirectory(swapDir);
             _filewriter = File.Create(pathToFolder);
         }
         public async Task WritePackage(Message msg)
         {
-            Console.WriteLine($"Get >{msg.serialNumber} ({actualNumder})");
-            if (msg.serialNumber >= actualNumder)
+            if (_disposed) return;
+
+            int current = Interlocked.CompareExchange(ref actualNumder, 0, 0);
+            if (msg.serialNumber >= current)
             {
                 _queueToWrite.Writer.TryWrite(msg);
             }
@@ -51,44 +57,46 @@ namespace Shared.Source.NetDriver.AC
             }
         }
 
-        private async Task WritingContent()
+        private async Task WritingContent(CancellationToken token)
         {
             var reader = _queueToWrite.Reader;
-
-            await foreach (var msg in reader.ReadAllAsync())
+            try
             {
-                Console.WriteLine($"                    {actualNumder} : {expectedQuantity}");
-                if (msg.serialNumber == actualNumder)
+                await foreach (var msg in reader.ReadAllAsync(token))
                 {
-                    await _filewriter.WriteAsync(msg.content);
-                    actualNumder = actualNumder + 1;
-                }
+                    if (msg.serialNumber == actualNumder)
+                    {
+                        await _filewriter.WriteAsync(msg.content);
+                        actualNumder = actualNumder + 1;
+                    }
 
-                while (_hash.TryGetValue(actualNumder, out var nMsg))
-                {
-                    await _filewriter.WriteAsync(nMsg.content);
-                    _hash.TryRemove(actualNumder, out _);
-                    actualNumder = actualNumder + 1;
-                    Console.WriteLine($"                    {actualNumder} : {expectedQuantity}");
-                }
+                    while (_hash.TryGetValue(actualNumder, out var nMsg))
+                    {
+                        await _filewriter.WriteAsync(nMsg.content);
+                        _hash.TryRemove(actualNumder, out _);
+                        actualNumder = actualNumder + 1;
+                    }
 
-                Console.WriteLine($"                    {actualNumder} : {expectedQuantity}");
-                if (actualNumder == expectedQuantity)
-                {
-                    Console.WriteLine($"                fin write");
-                    _queueToWrite.Writer.Complete();
-                    IsCompleted = true;
-                    return;
+                    if (actualNumder == expectedQuantity)
+                    {
+                        _queueToWrite.Writer.Complete();
+                    }
                 }
+            }
+            finally
+            {
+                _disposeSelf(this);
             }
         }
 
         public void Dispose()
         {
-            Console.WriteLine($"                fin write");
+            _disposed = true;
+            _cts.Cancel();
+            _bgTask.Wait(TimeSpan.FromSeconds(5));
             _queueToWrite.Writer.TryComplete();
-            _filewriter?.Close();
             _filewriter?.Dispose();
+            _cts.Dispose();
         }
     }
 }

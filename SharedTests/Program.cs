@@ -14,23 +14,42 @@ namespace JabServer //                          DEMO
             var b = new Client();
 
 
-            //await b.clin.SendMassiveMesage(b.clin.socket, "C:\\Users\\suzi\\Downloads\\Telegram Desktop.zip");
-            while (true)
-            {
-                await b.clin.SendMassiveMesage(b.clin.socket, "C:\\Users\\suzi\\Pictures\\wallpapers\\wallhaven-1pyqx3.png", 1024);
-                //                                                      EXAMPLE to simple send
-                //while (true)
-                //{
-                //Console.Write("client message >");
-                //string inp = Console.ReadLine();
-                //if (inp == "/q") break;
 
-                //Message answer = await b.clin.SendReqMessageAsync(b.clin.socket, new Message(Guid.NewGuid(), ToBinary.Utf16(inp)));
-                //if (answer != null)
-                //    Console.WriteLine($"server answer: {FromBinary.Utf16(answer.content)}");
-                //}
-                Console.ReadKey();
-            }
+            //await b.clin.SendMassiveMesage(b.clin.socket, "C:\\Users\\suzi\\Downloads\\Telegram Desktop.zip");
+            //while (true)
+            //{
+            Console.WriteLine("Start!");
+                List<Task> tsk = new();
+            tsk.Add(b.clin.SendMassiveMesage(b.clin.socket, "C:\\Users\\suzi\\Pictures\\wallpapers\\wallhaven-1pyqx3.png"));
+            tsk.Add(b.clin.SendMassiveMesage(b.clin.socket, "C:\\Users\\suzi\\Pictures\\wallpapers\\photo_2025-12-14_02-12-08.jpg"));
+            tsk.Add(b.clin.SendMassiveMesage(b.clin.socket, "C:\\Users\\suzi\\Pictures\\wallpapers\\wallhaven-l8kkxr.jpg"));
+            tsk.Add(b.clin.SendMassiveMesage(b.clin.socket, "C:\\Users\\suzi\\Pictures\\Avatars\\IMG_4003.PNG"));
+            tsk.Add(b.clin.SendMassiveMesage(b.clin.socket, "C:\\Users\\suzi\\Pictures\\Avatars\\photo_2026-01-17_23-19-04.jpg"));
+            tsk.Add(b.clin.SendMassiveMesage(b.clin.socket, "C:\\Users\\suzi\\Pictures\\Avatars\\photo_2026-01-17_23-19-06.jpg"));
+
+            Task.WhenAll(tsk).Wait();
+
+            Console.WriteLine("BigEnd!");
+            //}
+            //    Console.ReadKey();
+
+
+
+
+
+
+
+            //                                                      EXAMPLE to simple send
+            //while (true)
+            //{
+            //Console.Write("client message >");
+            //string inp = Console.ReadLine();
+            //if (inp == "/q") break;
+
+            //Message answer = await b.clin.SendReqMessageAsync(b.clin.socket, new Message(Guid.NewGuid(), ToBinary.Utf16(inp)));
+            //if (answer != null)
+            //    Console.WriteLine($"server answer: {FromBinary.Utf16(answer.content)}");
+            //}
             a.Dispose();
             b.Dispose();
         }
