@@ -14,9 +14,9 @@ using System.Xml.Linq;
 
 namespace Shared.Source.NetDriver.AC
 {
-    public partial class NetDriverCore
+    public abstract partial class INetdriverCore
     {
-        protected Func<Request, Task<byte[]?>>? processor;
+        protected Func<Request, Task> processor;
         protected readonly ConcurrentDictionary<Guid, Request> _pendingRequests = new();
         protected readonly ConcurrentDictionary<Guid, MassiveContentBuilder> _contentBuilder = new();
         protected readonly Channel<Request> _dispatchChannel = Channel.CreateUnbounded<Request>();
@@ -27,12 +27,14 @@ namespace Shared.Source.NetDriver.AC
         public readonly string LOGFOLDER = "logs.txt";
 
 
-        public async Task InitalizeNetDriver()
+        protected void InitalizeNetDriver()
         {
             try
             {
+                DebugTool.StartDebugTool();
                 _backgroundTasks.Add(DispatchQueueController(_cts.Token));
                 _backgroundTasks.Add(IncomingQueueController(_cts.Token));
+                _backgroundTasks.Add(DisposeBuilderController(_cts.Token));
             }
             catch (Exception ex)
             {
@@ -41,22 +43,39 @@ namespace Shared.Source.NetDriver.AC
         }
         public virtual void Shutdown()
         {
-            _cts.Cancel();
-            foreach(var bt in _backgroundTasks)
+            try
             {
-                bt.Dispose();
+                _cts.Cancel();
+
+                Task.WhenAll(_backgroundTasks).Wait(TimeSpan.FromSeconds(10));
+
+                _dispatchChannel.Writer.TryComplete();
+                _incomingChannel.Writer.TryComplete();
+
+                foreach (var builder in _contentBuilder.Values)
+                {
+                    builder.Dispose();
+                }
+                _contentBuilder.Clear();
+
+                foreach (var req in _pendingRequests.Values)
+                {
+                    req.rHook?.TrySetCanceled();
+                }
+                _pendingRequests.Clear();
+
+                DebugTool.Shutdown().Wait(TimeSpan.FromSeconds(2));
+                _cts.Dispose();
             }
-            _dispatchChannel.Writer.TryComplete();
-            _incomingChannel.Writer.TryComplete();
-            foreach (var bt in _backgroundTasks)
+            catch (Exception e)
             {
-                bt.Dispose();
+                DebugTool.Log(new DebugTool.log(DebugTool.log.Level.Warning, e.Message, LOGFOLDER));
             }
         }
 
 
 
-        public async Task<Exception> ListeningSocket(Socket sock)
+        protected async Task<Exception> ListeningSocket(Socket sock)
         {
             try
             {
@@ -82,9 +101,9 @@ namespace Shared.Source.NetDriver.AC
 
 
                     read = 0;
-                    while (read < mainBuffer.Length)
+                    while (read < sc.size)
                     {
-                        read += await sock.ReceiveAsync(mainBuffer.AsMemory(12 + read, mainBuffer.Length - (12 + read)));
+                        read += await sock.ReceiveAsync(mainBuffer.AsMemory(12 + read, sc.size - read));
                     }
 
                     var rq = new Request(new Message(mainBuffer), sock);
@@ -96,16 +115,11 @@ namespace Shared.Source.NetDriver.AC
                         if (_contentBuilder.TryGetValue(rq.message.msgsuid, out var pkgBuilder))
                         {
                             await pkgBuilder.WritePackage(rq.message);
-
-                            if (pkgBuilder.IsCompleted)
-                            {
-                                pkgBuilder.Dispose();
-                                _contentBuilder.TryRemove(rq.message.msgsuid, out _);
-                            }
                         }
                         else
                         {
                             if (_contentBuilder.TryAdd(rq.message.msgsuid, new MassiveContentBuilder(
+                                    ReportClosure,
                                     rq.message.msgsuid,
                                     rq.message.serialNumber,
                                     FromBinary.Utf16(rq.message.content
@@ -141,33 +155,40 @@ namespace Shared.Source.NetDriver.AC
 
         public async Task<Message?> SendReqMessageAsync(Socket sock, Message msg)                 // ожидаем ответ
         {
-            using var cts = CancellationTokenSource.CreateLinkedTokenSource();
-            cts.CancelAfter(TimeSpan.FromSeconds(30));
-
-            var tcs = new TaskCompletionSource<Request>();
-            var rq = new Request(msg, sock, tcs);
-            if (!_pendingRequests.TryAdd(rq.message.msgsuid, rq))
+            try
             {
-                DebugTool.Log(new DebugTool.log(DebugTool.log.Level.Error, "SendReqMessageAsync: can`t add message to dict", LOGFOLDER));
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+
+                var tcs = new TaskCompletionSource<Request>();
+                var rq = new Request(msg, sock, tcs);
+                if (!_pendingRequests.TryAdd(rq.message.msgsuid, rq))
+                {
+                    DebugTool.Log(new DebugTool.log(DebugTool.log.Level.Error, "SendReqMessageAsync: can`t add message to dict", LOGFOLDER));
+                }
+
+                _dispatchChannel.Writer.TryWrite(rq);
+
+
+                using (cts.Token.Register(() => tcs.TrySetCanceled()))
+                {
+                    var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(-1, cts.Token));
+                    if (completedTask == tcs.Task)
+                    {
+                        _pendingRequests.TryRemove(rq.message.msgsuid, out _);
+                        return (await tcs.Task).message;
+                    }
+                    else
+                    {
+                        _pendingRequests.TryRemove(rq.message.msgsuid, out _);
+                        DebugTool.Log(new DebugTool.log(DebugTool.log.Level.Warning, "Response timeout", LOGFOLDER));
+                        return null;
+                    }
+                }
             }
-
-            _dispatchChannel.Writer.TryWrite(rq);
-
-
-            using (cts.Token.Register(() => tcs.TrySetCanceled()))
+            catch (Exception e)
             {
-                var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(-1, cts.Token));
-                if (completedTask == tcs.Task)
-                {
-                    _pendingRequests.TryRemove(rq.message.msgsuid, out _);
-                    return (await tcs.Task).message;
-                }
-                else
-                {
-                    _pendingRequests.TryRemove(rq.message.msgsuid, out _);
-                    DebugTool.Log(new DebugTool.log(DebugTool.log.Level.Warning, "Response timeout", LOGFOLDER));
-                    return null;
-                }
+                DebugTool.Log(new DebugTool.log(DebugTool.log.Level.Error, e.Message, LOGFOLDER));
+                return null;
             }
         }
         public void SendAnsMessageAsync(Socket sock, Message msg)                                // не ожидаем ответа
@@ -177,7 +198,7 @@ namespace Shared.Source.NetDriver.AC
             _dispatchChannel.Writer.TryWrite(rq);
         }
 
-        protected async Task DispatchQueueController(CancellationToken cancellationToken = default)
+        private async Task DispatchQueueController(CancellationToken cancellationToken = default)
         {
             var reader = _dispatchChannel.Reader;
 
@@ -194,7 +215,7 @@ namespace Shared.Source.NetDriver.AC
             }
         }
 
-        public async Task IncomingQueueController(CancellationToken cancellationToken = default)
+        private async Task IncomingQueueController(CancellationToken cancellationToken = default)
         {
             var reader = _incomingChannel.Reader;
 
@@ -203,8 +224,7 @@ namespace Shared.Source.NetDriver.AC
                 try
                 {
                     if (processor == null) continue; //                                 процссор должен сам ответить на запрос, если то требуется.
-                    var res = await processor(req);
-                    if (res == null) continue;
+                    await processor(req);
                 }
                 catch (Exception ex)
                 {
