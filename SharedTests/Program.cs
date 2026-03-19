@@ -2,114 +2,39 @@
 using Shared.Source.NetDriver.AC;
 using Shared.Source.NetDriver.AC.Client;
 using Shared.Source.NetDriver.AC.Server;
+using SharedTests.ClientSide;
+using SharedTests.ServerSide;
 using System.Net;
 using System.Net.Sockets;
 
-namespace JabServer //                          DEMO
+namespace SharedTests //                          DEMO
 {
     internal class Program
     {
         public static async Task Main(string[] args)
         {
-            var a = new Server();
-            var b = new Client();
+            Console.Write("Chose youre role (server (s) jr user (u)): ");
+            var ch = Console.ReadLine();
 
-
-
-            //await b.clin.SendMassiveMesage(b.clin.socket, "C:\\Users\\suzi\\Downloads\\Telegram Desktop.zip");
-            //while (true)
-            //{
-            var ps = new Progress<string>(p =>
+            switch (ch)
             {
-                Console.Write($"\rОтправлено: {p}");
+                case "s":
+                    Console.BackgroundColor = ConsoleColor.DarkRed;
+                    var serv = new ServerNetworking();
+                    Console.ReadKey();
+                    serv.Dispose();
+                    break;
+                case "u":
+                    Console.Write("enter youre name: ");
+                    Console.BackgroundColor = ConsoleColor.DarkBlue;
+                    var clin = new ClientNetworking(Console.ReadLine());
+
+                    ConsoleController.NetworkAcept = clin.SendMsg;
+                    ConsoleController.kill = clin.Shutdown;
+                    
+                    ConsoleController.Run();
+                    break;
             }
-            );
-            await b.clin.SendMassiveMesage(b.clin.socket, "C:\\Users\\suzi\\Documents\\projects\\csP\\Messenger\\SharedTests\\Program.cs", 1024, ps);
-            //}
-            //    Console.ReadKey();
-
-
-
-
-
-
-
-            //                                                      EXAMPLE to simple send
-            //while (true)
-            //{
-            //Console.Write("client message >");
-            //string inp = Console.ReadLine();
-            //if (inp == "/q") break;
-
-            //Message answer = await b.clin.SendReqMessageAsync(b.clin.socket, new Message(Guid.NewGuid(), ToBinary.Utf16(inp)));
-            //if (answer != null)
-            //    Console.WriteLine($"server answer: {FromBinary.Utf16(answer.content)}");
-            //}
-            Console.ReadKey();
-            a.Dispose();
-            b.Dispose();
-        }
-    }
-
-
-
-   
-    internal class Server
-    {
-        private readonly ServerNetDriver serv;
-        public Server()
-        {
-            serv = new ServerNetDriver(Proc, new IPEndPoint(IPAddress.Any, 22222));
-        }
-        public async Task Proc(Request req)
-        {
-            //                                                      EXAMPLE to simple send
-
-            //Console.WriteLine($"client doble message: {FromBinary.Utf16(req.message.content)}");
-            //Console.Write("server answer >");
-            //string answer = Console.ReadLine();
-            //serv.SendAnsMessageAsync(req.socket, new Message(req.message.msgsuid, ToBinary.Utf16(answer)));
-
-
-            //                                  EXAMPLE how to do
-            //switch (req.message.content[0])
-            //{
-            //    case 0:
-            //        Console.WriteLine($"client single message: {FromBinary.Utf16(req.message.content)}");
-            //        break;
-            //    case 1:
-            //        Console.WriteLine($"client doble message: {FromBinary.Utf16(req.message.content)}");
-            //        Console.Write("server answer >");
-            //        string answer = Console.ReadLine();
-            //        serv.SendAnsMessageAsync(req.socket, new Message(req.message.msgsuid, ToBinary.Utf16(answer)));
-            //        break;
-            //}
-        }
-        public void Dispose()
-        {
-            serv.Shutdown();
-        }
-    }
-
-
-
-    internal class Client
-    {
-        public readonly ClientNetDriver clin;
-
-        public Client()
-        {
-            clin = new ClientNetDriver(IPAddress.Parse("127.0.0.1"), 22222, Proc);
-        }
-        public async Task Proc(Request req)
-        {
-            //                                                      EXAMPLE to simple send
-            //Console.Write("message by server: ");
-            //Console.WriteLine(FromBinary.Utf16(req.message.content));
-        }
-        public void Dispose()
-        {
-            clin.Shutdown();
         }
     }
 }
