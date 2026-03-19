@@ -29,6 +29,7 @@ namespace Shared.Source.NetDriver.AC
 
         protected void InitalizeNetDriver()
         {
+            Console.WriteLine("Внимение!\nВам не следует принудительно закрывать консоль!\nпри принудительном закрытии нарушится логика завершения процессов!");
             try
             {
                 DebugTool.StartDebugTool();
@@ -43,6 +44,7 @@ namespace Shared.Source.NetDriver.AC
         }
         public virtual void Shutdown()
         {
+            Console.WriteLine("\nЗапущен процесс закрытия.\nдождитесь его окончания.");
             try
             {
                 _cts.Cancel();

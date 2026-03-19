@@ -3,6 +3,7 @@ using Shared.Source.NetDriver.AC;
 using Shared.Source.NetDriver.AC.Client;
 using Shared.Source.NetDriver.AC.Server;
 using System.Net;
+using System.Net.Sockets;
 
 namespace JabServer //                          DEMO
 {
@@ -18,18 +19,12 @@ namespace JabServer //                          DEMO
             //await b.clin.SendMassiveMesage(b.clin.socket, "C:\\Users\\suzi\\Downloads\\Telegram Desktop.zip");
             //while (true)
             //{
-            Console.WriteLine("Start!");
-                List<Task> tsk = new();
-            tsk.Add(b.clin.SendMassiveMesage(b.clin.socket, "C:\\Users\\suzi\\Pictures\\wallpapers\\wallhaven-1pyqx3.png"));
-            tsk.Add(b.clin.SendMassiveMesage(b.clin.socket, "C:\\Users\\suzi\\Pictures\\wallpapers\\photo_2025-12-14_02-12-08.jpg"));
-            tsk.Add(b.clin.SendMassiveMesage(b.clin.socket, "C:\\Users\\suzi\\Pictures\\wallpapers\\wallhaven-l8kkxr.jpg"));
-            tsk.Add(b.clin.SendMassiveMesage(b.clin.socket, "C:\\Users\\suzi\\Pictures\\Avatars\\IMG_4003.PNG"));
-            tsk.Add(b.clin.SendMassiveMesage(b.clin.socket, "C:\\Users\\suzi\\Pictures\\Avatars\\photo_2026-01-17_23-19-04.jpg"));
-            tsk.Add(b.clin.SendMassiveMesage(b.clin.socket, "C:\\Users\\suzi\\Pictures\\Avatars\\photo_2026-01-17_23-19-06.jpg"));
-
-            Task.WhenAll(tsk).Wait();
-
-            Console.WriteLine("BigEnd!");
+            var ps = new Progress<string>(p =>
+            {
+                Console.Write($"\rОтправлено: {p}");
+            }
+            );
+            await b.clin.SendMassiveMesage(b.clin.socket, "C:\\Users\\suzi\\Documents\\projects\\csP\\Messenger\\SharedTests\\Program.cs", 1024, ps);
             //}
             //    Console.ReadKey();
 
@@ -50,6 +45,7 @@ namespace JabServer //                          DEMO
             //if (answer != null)
             //    Console.WriteLine($"server answer: {FromBinary.Utf16(answer.content)}");
             //}
+            Console.ReadKey();
             a.Dispose();
             b.Dispose();
         }

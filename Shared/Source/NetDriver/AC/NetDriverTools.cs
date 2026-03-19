@@ -19,7 +19,7 @@ namespace Shared.Source.NetDriver.AC
         private readonly Channel<Guid> _builderDisposeChannel = Channel.CreateUnbounded<Guid>();
 
 
-        public async Task SendMassiveMesage(Socket sock, string pathToFile, int part = 1024 * 1024 * 32)
+        public async Task SendMassiveMesage(Socket sock, string pathToFile, int part = 1024 * 1024 * 32, IProgress<string> progress=null)
         {
             string fileName = Path.GetFileName(pathToFile);
             FileInfo fileInfo = new FileInfo(pathToFile);
@@ -46,7 +46,9 @@ namespace Shared.Source.NetDriver.AC
                         var msg = new Message(mainGuid, dataToSend, sn);
                         SendAnsMessageAsync(sock, msg);
                         sn++;
-                    }
+
+                        progress?.Report($"{(((float)sn / (float)piceCount) * 100.0f):F1}%");
+                    } 
                 }
             }
             else
