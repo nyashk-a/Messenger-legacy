@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using static MessengerServer.SQLiteHandler;
+using static MessengerServer.DataBaseControl.SQLiteHandlerVersions.AA.SQLiteHandler;
 
-namespace MessengerServer.DataBaseControl
+namespace MessengerServer.DataBaseControl.SQLiteHandlerVersions.AA
 {
     internal class DataBaseStructure
     {

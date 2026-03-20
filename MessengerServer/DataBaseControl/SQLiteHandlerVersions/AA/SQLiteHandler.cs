@@ -1,7 +1,8 @@
 ﻿using Microsoft.Data.Sqlite;
+using System.Collections.Concurrent;
 using static JabNet.USC;
 
-namespace MessengerServer
+namespace MessengerServer.DataBaseControl.SQLiteHandlerVersions.AA
 {
     internal static class SQLiteHandler
     {
@@ -39,8 +40,14 @@ namespace MessengerServer
         public static readonly string ImageSourcePATH = Path.Combine(PATH, "massiveUserData");                                                             // путь к папке с картинками
         public static readonly string DataBasePATH = Path.Combine(PATH, "userDataStorage.db");                                                             // путь к бд
 
-        private static readonly List<Table> _tableList = new();
-        public static List<Table> TableList { get => _tableList.Where(n => !n.name.StartsWith("sqlite_")).ToList(); }
+        private static readonly ConcurrentBag<Table> _tableList = new();
+        public static List<Table> TableList
+        {
+            get
+            {
+                return _tableList.Where(n => !n.name.StartsWith("sqlite_")).ToList();
+            }
+        }
 
         public static async Task InitAsync()
         {
@@ -132,7 +139,7 @@ namespace MessengerServer
                 try
                 {
                     await Cmd.ExecuteNonQueryAsync();
-                    _tableList.RemoveAll(t => t.name == name);
+                    //_tableList.RemoveAll(t => t.name == name);
                     await connection.CloseAsync();
                     return true;
                 }
