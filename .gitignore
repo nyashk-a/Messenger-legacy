@@ -312,3 +312,5 @@ MessengerClient/bin/Release/DataIO.dll.config
 MessengerClient/bin/Release/DataIO.xml
 MessengerClient/bin/Release/AVcontrol.dll.config
 MessengerClient/bin/Release/DateTime4b.dll.config
+Shared/bin/
+Shared/obj/
