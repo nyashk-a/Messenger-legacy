@@ -5,7 +5,6 @@ C:\Users\suzi\Documents\projects\csP\Messenger\SharedTests\bin\Release\net10.0\S
 C:\Users\suzi\Documents\projects\csP\Messenger\SharedTests\bin\Release\net10.0\SharedTests.pdb
 C:\Users\suzi\Documents\projects\csP\Messenger\SharedTests\bin\Release\net10.0\AVcontrol.dll
 C:\Users\suzi\Documents\projects\csP\Messenger\SharedTests\bin\Release\net10.0\Shared.dll
-C:\Users\suzi\Documents\projects\csP\Messenger\SharedTests\bin\Release\net10.0\Shared.pdb
 C:\Users\suzi\Documents\projects\csP\Messenger\SharedTests\obj\Release\net10.0\SharedTests.csproj.AssemblyReference.cache
 C:\Users\suzi\Documents\projects\csP\Messenger\SharedTests\obj\Release\net10.0\SharedTests.GeneratedMSBuildEditorConfig.editorconfig
 C:\Users\suzi\Documents\projects\csP\Messenger\SharedTests\obj\Release\net10.0\SharedTests.AssemblyInfoInputs.cache

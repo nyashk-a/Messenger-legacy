@@ -15,7 +15,7 @@ namespace MessengerServer
         public readonly string DatabasePath;
         public readonly List<Column> Columns = new();
 
-        private readonly Channel<Task> bgTasks = Channel.CreateUnbounded<Task>();                         // для действий, которые ничего не возвращают (они же "SET_. . .")
+        private readonly Channel<Func<Task>> bgTasks = Channel.CreateUnbounded<Func<Task>>();                         // для действий, которые ничего не возвращают (они же "SET_. . .")
         private readonly Task Executor;
         private readonly CancellationTokenSource _cts = new();
 
@@ -24,55 +24,53 @@ namespace MessengerServer
             TableName = tName;
             DatabasePath = dbPath;
             Executor = Exec(_cts.Token);
-            bgTasks.Writer.TryWrite(Initalize());
-        }
-
-        private async Task Initalize()
-        {
-            using (SqliteConnection connection = new($"Data Source={DatabasePath}"))
+            bgTasks.Writer.TryWrite(async () =>
             {
-                await connection.OpenAsync();
-                try
+                using (SqliteConnection connection = new($"Data Source={DatabasePath}"))
                 {
-                    var cmdCheck = connection.CreateCommand();
-                    cmdCheck.CommandText = "SELECT EXISTS (SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = @tableName);";
-                    cmdCheck.Parameters.AddWithValue("@tableName", TableName);
-
-                    var result = await cmdCheck.ExecuteScalarAsync();
-
-                    if (Convert.ToInt32(result) == 0)
+                    await connection.OpenAsync();
+                    try
                     {
-                        Dispose();
-                        return;
+                        var cmdCheck = connection.CreateCommand();
+                        cmdCheck.CommandText = "SELECT EXISTS (SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = @tableName);";
+                        cmdCheck.Parameters.AddWithValue("@tableName", TableName);
+
+                        var result = await cmdCheck.ExecuteScalarAsync();
+
+                        if (Convert.ToInt32(result) == 0)
+                        {
+                            Dispose();
+                            return;
+                        }
+
+
+
+                        var cmdToGetColumnsList = connection.CreateCommand();
+                        cmdToGetColumnsList.CommandText = $"PRAGMA table_info(\"{TableName}\");";
+                        var reader = await cmdToGetColumnsList.ExecuteReaderAsync();
+
+                        while (await reader.ReadAsync())
+                        {
+                            var n = reader.GetString(reader.GetOrdinal("name"));
+                            var t = reader.GetString(reader.GetOrdinal("type"));
+                            var c = ParseColumnType(n, t);
+                            Columns.Add(c);
+                        }
                     }
-
-
-
-                    var cmdToGetColumnsList = connection.CreateCommand();
-                    cmdToGetColumnsList.CommandText = $"PRAGMA table_info(\"{TableName}\");";
-                    var reader = await cmdToGetColumnsList.ExecuteReaderAsync();
-
-                    while (await reader.ReadAsync())
+                    catch (Exception ex)
                     {
-                        var n = reader.GetString(reader.GetOrdinal("name"));
-                        var t = reader.GetString(reader.GetOrdinal("type"));
-                        var c = ParseColumnType(n, t);
-                        Columns.Add(c);
+                        DebugTool.Log(new DebugTool.log(
+                            DebugTool.log.Level.Error,
+                            $"initalize bd: {ex}",
+                            TableName
+                        ));
                     }
                 }
-                catch (Exception ex)
-                {
-                    DebugTool.Log(new DebugTool.log(
-                        DebugTool.log.Level.Error,
-                        $"initalize bd: {ex}",
-                        TableName
-                    ));
-                }
-            }
+            });                                                                 // инициализация таблицы
         }
 
 
-        public async Task<int?> GS_InsertRow()                                                          // у нас железокаменно существует айдишник строки. всегда. и он всегда называется "rID"
+        public async Task<int?> GS_InsertRow()                                                                       // у нас железокаменно существует айдишник строки. всегда. и он всегда называется "rID"
         {
             using (SqliteConnection connection = new($"Data Source={DatabasePath}"))
             {
@@ -97,6 +95,13 @@ namespace MessengerServer
             }
         }
 
+        public void S_setValue<T>(int rID, string columnName, T vlaue)
+        {
+            bgTasks.Writer.TryWrite(async () =>
+            {
+
+            });
+        }
 
         private static Column ParseColumnType(string name, string typeString)
         {
@@ -136,7 +141,7 @@ namespace MessengerServer
             {
                 try
                 {
-                    await tsk;
+                    await tsk();
                 }
                 catch (Exception ex)
                 {
