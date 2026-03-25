@@ -13,7 +13,7 @@ namespace SharedTests //                          DEMO
     {
         public static async Task Main(string[] args)
         {
-            Console.Write("Chose youre role (server (s) jr user (u)): ");
+            Console.Write("Chose youre role (server (s) or user (u)): ");
             var ch = Console.ReadLine();
 
             switch (ch)
@@ -25,9 +25,24 @@ namespace SharedTests //                          DEMO
                     serv.Dispose();
                     break;
                 case "u":
+                    Console.BackgroundColor = ConsoleColor.DarkCyan;
                     Console.Write("enter youre name: ");
-                    Console.BackgroundColor = ConsoleColor.DarkBlue;
-                    var clin = new ClientNetworking(Console.ReadLine());
+                    string name = Console.ReadLine();
+
+                    Console.Write("chose connect type (local (l) or global (g)):");
+                    IPAddress ip = IPAddress.Parse("127.0.0.1");
+                    switch (Console.ReadLine())
+                    {
+                        case "l":
+                            ip = IPAddress.Parse("127.0.0.1");
+                            break;
+                        case "g":
+                            Console.WriteLine((await Dns.GetHostAddressesAsync("jabnet.mooo.com"))[0].ToString());
+                            ip = (await Dns.GetHostAddressesAsync("jabnet.mooo.com"))[0];
+                            break;
+                    }
+                    var clin = new ClientNetworking(name, ip);
+
 
                     ConsoleController.NetworkAcept = clin.SendMsg;
                     ConsoleController.kill = clin.Shutdown;

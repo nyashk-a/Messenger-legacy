@@ -9,10 +9,10 @@
 
   <ItemGroup>
     <Reference Include="AVcontrol">
-      <HintPath>..\Shared\bin\Release\net10.0\AVcontrol.dll</HintPath>
+      <HintPath>..\Shared\current versions\AVcontrol.dll</HintPath>
     </Reference>
     <Reference Include="Shared">
-      <HintPath>..\Shared\bin\Release\net10.0\Shared.dll</HintPath>
+      <HintPath>..\Shared\current versions\Shared.dll</HintPath>
     </Reference>
   </ItemGroup>
 

@@ -14,10 +14,10 @@ namespace SharedTests.ClientSide
         private readonly ClientNetDriver clin;
         public readonly string Name;
 
-        public ClientNetworking(string name)
+        public ClientNetworking(string name, IPAddress IP)
         {
             Name = name;
-            clin = new(IPAddress.Parse("127.0.0.1"), 22222, Proc);
+            clin = new(IP, 22222, Proc);
             StoryInit().Wait();
         }
         private async Task StoryInit()

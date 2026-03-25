@@ -17,3 +17,4 @@ C:\Users\suzi\Documents\projects\csP\Messenger\SharedTests\obj\Release\net10.0\r
 C:\Users\suzi\Documents\projects\csP\Messenger\SharedTests\obj\Release\net10.0\SharedTests.pdb
 C:\Users\suzi\Documents\projects\csP\Messenger\SharedTests\obj\Release\net10.0\SharedTests.genruntimeconfig.cache
 C:\Users\suzi\Documents\projects\csP\Messenger\SharedTests\obj\Release\net10.0\ref\SharedTests.dll
+C:\Users\suzi\Documents\projects\csP\Messenger\SharedTests\bin\Release\net10.0\Shared.pdb
