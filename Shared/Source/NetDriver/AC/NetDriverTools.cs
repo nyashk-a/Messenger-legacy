@@ -25,9 +25,22 @@ namespace Shared.Source.NetDriver.AC
             FileInfo fileInfo = new FileInfo(pathToFile);
             long fileSize = fileInfo.Length;
             int piceCount = (int)((fileSize + part - 1) / part);
+            int complitedCount = 0;
 
-            var configMessage = new Message(null, ToBinary.Utf16(fileName), piceCount);
-            Guid mainGuid = configMessage.msgsuid;
+
+            Guid mg = Guid.NewGuid();
+            byte[] mainGuid = mg.ToByteArray();
+
+            var dt = ToBinary.Utf16(fileName);
+
+            var confMessageData = new byte[dt.Length + 16];
+            Array.Copy(mainGuid, 0, confMessageData, 0, mainGuid.Length);
+            Array.Copy(dt, 0, confMessageData, 16, dt.Length);
+
+            var configMessage = new Message(mg, confMessageData, piceCount);
+            
+
+            List<Task<Message?>> sendingData = new();
 
             var firstAns = await SendReqMessageAsync(sock, configMessage);
             if (firstAns != null && FromBinary.Utf16(firstAns.content) == "ready")
@@ -40,20 +53,44 @@ namespace Shared.Source.NetDriver.AC
 
                     while ((bytesRead = await fs.ReadAsync(buffer, 0, buffer.Length)) > 0)
                     {
-                        byte[] dataToSend = new byte[bytesRead];
-                        Array.Copy(buffer, 0, dataToSend, 0, bytesRead);
+                        byte[] dataToSend = new byte[bytesRead + 16];
+                        Array.Copy(mainGuid, 0, dataToSend, 0, mainGuid.Length);
+                        Array.Copy(buffer, 0, dataToSend, 16, bytesRead);
 
-                        var msg = new Message(mainGuid, dataToSend, sn);
-                        SendAnsMessageAsync(sock, msg);
+                        var msg = new Message(null, dataToSend, sn);
+                        sendingData.Add(SendReqMessageAsync(sock, msg));
                         sn++;
-
-                        progress?.Report($"{(((float)sn / (float)piceCount) * 100.0f):F1}%");
                     } 
+                }
+
+                while (sendingData.Any())
+                {
+                    var completedTask = await Task.WhenAny(sendingData);
+
+                    var res = await completedTask;
+                    sendingData.Remove(completedTask);
+
+                    if (FromBinary.Utf16(res?.content) == "11")
+                    {
+                        complitedCount++;
+
+                        progress?.Report($"{(((float)complitedCount / (float)piceCount) * 100.0f):F1}%");
+                    }
+                    else
+                    {
+                        DebugTool.Log(new DebugTool.log(
+                        DebugTool.log.Level.Warning,
+                        $"broken data send with {FromBinary.Utf16(res?.content)}",
+                        LOGFOLDER));
+                    }
                 }
             }
             else
             {
-                DebugTool.Log(new DebugTool.log(DebugTool.log.Level.Warning, "the other party is not responding", LOGFOLDER));
+                DebugTool.Log(new DebugTool.log(
+                    DebugTool.log.Level.Warning, 
+                    "the other party is not responding", 
+                    LOGFOLDER));
             }
         }
 

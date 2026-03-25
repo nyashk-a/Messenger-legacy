@@ -20,7 +20,7 @@ namespace Shared.Source.NetDriver.AC
         private readonly Task _bgTask;
         private bool _disposed = false;
         private readonly FileStream _filewriter;
-        private int actualNumder = 0;
+        private volatile int actualNumder = 0;
         private readonly Action<MassiveContentBuilder> _disposeSelf;
 
         public readonly string pathToFolder;
@@ -51,10 +51,7 @@ namespace Shared.Source.NetDriver.AC
             {
                 _queueToWrite.Writer.TryWrite(msg);
             }
-            else
-            {
-                _hash.TryAdd(msg.serialNumber, msg);
-            }
+            _hash.TryAdd(msg.serialNumber, msg);
         }
 
         private async Task WritingContent(CancellationToken token)
@@ -66,13 +63,18 @@ namespace Shared.Source.NetDriver.AC
                 {
                     if (msg.serialNumber == actualNumder)
                     {
-                        await _filewriter.WriteAsync(msg.content);
+                        byte[] cnt = new byte[msg.content.Length - 16];
+                        Array.Copy(msg.content, 16, cnt, 0, cnt.Length);
+                        await _filewriter.WriteAsync(cnt);
+                        _hash.TryRemove(actualNumder, out _);
                         actualNumder = actualNumder + 1;
                     }
 
                     while (_hash.TryGetValue(actualNumder, out var nMsg))
                     {
-                        await _filewriter.WriteAsync(nMsg.content);
+                        byte[] cnt = new byte[nMsg.content.Length - 16];
+                        Array.Copy(nMsg.content, 16, cnt, 0, cnt.Length);
+                        await _filewriter.WriteAsync(cnt);
                         _hash.TryRemove(actualNumder, out _);
                         actualNumder = actualNumder + 1;
                     }

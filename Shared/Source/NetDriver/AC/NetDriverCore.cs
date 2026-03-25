@@ -83,6 +83,7 @@ namespace Shared.Source.NetDriver.AC
             {
                 while (true)
                 {
+                    // reading pack
                     var lenghtBuffer = new byte[12];
                     int read = 0;
                     while (read < lenghtBuffer.Length)
@@ -110,31 +111,11 @@ namespace Shared.Source.NetDriver.AC
 
                     var rq = new Request(new Message(mainBuffer), sock);
 
-
+                    // end reading
 
                     if (rq.message.serialNumber != -1)
                     {
-                        if (_contentBuilder.TryGetValue(rq.message.msgsuid, out var pkgBuilder))
-                        {
-                            await pkgBuilder.WritePackage(rq.message);
-                        }
-                        else
-                        {
-                            if (_contentBuilder.TryAdd(rq.message.msgsuid, new MassiveContentBuilder(
-                                    ReportClosure,
-                                    rq.message.msgsuid,
-                                    rq.message.serialNumber,
-                                    FromBinary.Utf16(rq.message.content
-                                )
-                            )))
-                            {
-                                SendAnsMessageAsync(sock, new Message(rq.message.msgsuid, ToBinary.Utf16("ready")));
-                            }
-                            else
-                            {
-                                DebugTool.Log(new DebugTool.log(DebugTool.log.Level.Error, "ListeningSocket: can`t add message to dict", LOGFOLDER));
-                            }
-                        }
+                        await IncomingMassiveContentHandler(rq, sock);
                         continue;
                     }
 
@@ -232,6 +213,48 @@ namespace Shared.Source.NetDriver.AC
                 {
                     DebugTool.Log(new DebugTool.log(DebugTool.log.Level.Error, ex.Message, LOGFOLDER));
                 }
+            }
+        }
+
+        private async Task IncomingMassiveContentHandler(Request rq, Socket sock)
+        {
+            try
+            {
+                Guid mainGuid = new Guid(rq.message.content.AsSpan(0, 16));
+                if (_contentBuilder.TryGetValue(mainGuid, out var pkgBuilder))
+                {
+                    await pkgBuilder.WritePackage(rq.message);
+                    SendAnsMessageAsync(sock, new Message(rq.message.msgsuid, ToBinary.Utf16("11")));
+                }
+                else
+                {
+                    if (_contentBuilder.TryAdd(mainGuid, new MassiveContentBuilder(
+                            ReportClosure,
+                            mainGuid,
+                            rq.message.serialNumber,
+                            FromBinary.Utf16(rq.message.content.AsSpan(16).ToArray()
+                        )
+                    )))
+                    {
+                        SendAnsMessageAsync(sock, new Message(rq.message.msgsuid, ToBinary.Utf16("ready")));
+                    }
+                    else
+                    {
+                        DebugTool.Log(new DebugTool.log(
+                            DebugTool.log.Level.Error, 
+                            "ListeningSocket: can`t add message to dict", 
+                            LOGFOLDER));
+                        SendAnsMessageAsync(sock, new Message(rq.message.msgsuid, ToBinary.Utf16("broke")));
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                SendAnsMessageAsync(sock, new Message(rq.message.msgsuid, ToBinary.Utf16(e.Message)));
+                DebugTool.Log(new DebugTool.log(
+                            DebugTool.log.Level.Error,
+                            e.Message,
+                            LOGFOLDER));
             }
         }
     }
