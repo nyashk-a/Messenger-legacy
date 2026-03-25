@@ -18,7 +18,7 @@ namespace Shared.Source.NetDriver.AC.Server
             ProtocolType.Tcp
         );
 
-        private readonly ConcurrentDictionary<Socket, Task> Users = new();
+        public readonly ConcurrentDictionary<Socket, Task> Users = new();
         public ServerNetDriver(Func<Request, Task> Processor, IPEndPoint endPoint)
         {
             processor = Processor;
