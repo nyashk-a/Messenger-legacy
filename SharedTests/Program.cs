@@ -19,7 +19,6 @@ namespace SharedTests //                          DEMO
             switch (ch)
             {
                 case "s":
-                    Console.BackgroundColor = ConsoleColor.DarkRed;
                     var serv = new ServerNetworking();
                     Console.ReadKey();
                     serv.Dispose();
@@ -50,6 +49,8 @@ namespace SharedTests //                          DEMO
                     ConsoleController.Run();
                     break;
             }
+
+            Console.BackgroundColor = ConsoleColor.Black;
         }
     }
 }
