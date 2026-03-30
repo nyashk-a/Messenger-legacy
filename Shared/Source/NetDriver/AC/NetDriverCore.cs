@@ -1,5 +1,4 @@
 ﻿using AVcontrol;
-using Microsoft.Extensions.Logging;
 using Shared.Source.tools;
 using System;
 using System.Collections.Concurrent;

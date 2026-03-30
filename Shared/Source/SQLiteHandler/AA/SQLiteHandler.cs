@@ -1,35 +1,18 @@
 ﻿using Microsoft.Data.Sqlite;
+using Shared.Source.SQLiteHandler.AB;
+using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using static JabNet.USC;
 
 namespace MessengerServer.DataBaseControl.SQLiteHandlerVersions.AA
 {
     internal static class SQLiteHandler
     {
-        public class Column
-        {
-            public Column(string name, Column.Types type, int? lenght = null)
-            {
-                Name = name;
-                Type = type == Types.VARCHAR && lenght == null ? Types.TEXT : type;
-                Lenght = lenght;
-            }
-            public readonly string Name;
-            public readonly Types Type;
-            public readonly int? Lenght;
-
-            public enum Types
-            {
-                TEXT,
-                INTEGER,
-                FLOAT,
-                VARCHAR,
-                DATE,
-                TIME,
-                DATETIME,
-            }
-        }
-
+        
         public struct Table(string tableName, Column[] columnsList)
         {
             public readonly string name = tableName;
