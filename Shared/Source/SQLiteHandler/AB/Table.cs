@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Shared.Source.SQLiteHandler.AB
 {
-    internal class Table
+    public class Table
     {
         public readonly string TableName;
         public static string DatabasePath;
@@ -22,7 +22,7 @@ namespace Shared.Source.SQLiteHandler.AB
             TableName = tName;
         }
 
-        public static async Task<Table?> defineTable(string tName, string dbPath)
+        public static async Task<Table?> defineTable(string tName)
         {
             try
             {
@@ -95,12 +95,6 @@ namespace Shared.Source.SQLiteHandler.AB
                     ));
                 }
             }
-        }
-
-
-        public SqliteConnection CreateConnection()
-        {
-            return new SqliteConnection($"Data Source={DatabasePath}");
         }
 
         public async Task<int?> InsertRow(SqliteConnection? sqc=null)                                                                       // у нас железокаменно существует айдишник строки. всегда. и он всегда называется "rID"
@@ -371,13 +365,9 @@ namespace Shared.Source.SQLiteHandler.AB
                     try
                     {
                         var cmd = connection.CreateCommand();
-                        var sb = new StringBuilder();
-                        foreach (var cl in columnNames)
-                        {
-                            if (sb.Length > 0) sb.Append(", ");
-                            sb.Append($"\"{cl}\"");
-                        }
-                        string clmn = sb.ToString();
+
+                        string clmn = string.Join(", ", columnNames);
+
                         cmd.CommandText = $"SELECT {clmn} FROM {TableName} WHERE rID=@rid";
 
                         cmd.Parameters.AddWithValue("@rid", rID);
