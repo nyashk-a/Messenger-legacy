@@ -97,7 +97,10 @@ namespace Shared.Source.SQLiteHandler.AB
             }
         }
 
-        public async Task<int?> InsertRow(SqliteConnection? sqc=null)                                                                       // у нас железокаменно существует айдишник строки. всегда. и он всегда называется "rID"
+
+
+        // у нас железокаменно существует айдишник строки. всегда. и он всегда называется "rID"
+        public async Task<int?> InsertRow(SqliteConnection? sqc=null)
         {
             if (sqc == null)
             {
