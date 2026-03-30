@@ -2,7 +2,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Shared.Source;
-using DateTime4bLib;
+using AVcontrol;
 
 namespace Epsilon
 {
@@ -69,7 +69,7 @@ namespace Epsilon
         {
             public string StringSentTime
             {
-                get => SentTime.CurrentToStandardString();
+                get => SentTime.ToStringTime();
             }
             public Message(DateTime4b sentTime, string message, ulong authorSUID) : base(sentTime, message, authorSUID)
             {
@@ -93,7 +93,7 @@ namespace Epsilon
                 get => sentTime;
                 set
                 {
-                    sentTime.CurrentToStandardString();
+                    sentTime.ToStringTime();
                     sentTime = value;
                     OnPropertyChanged();
                 }

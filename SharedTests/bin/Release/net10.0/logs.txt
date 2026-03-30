@@ -1,4 +1,0 @@
-﻿Error: A task may only be disposed if it is in a completion state (RanToCompletion, Faulted or Canceled).
-Error: A task may only be disposed if it is in a completion state (RanToCompletion, Faulted or Canceled).
-Error: Удаленный хост принудительно разорвал существующее подключение.
-Error: Удаленный хост принудительно разорвал существующее подключение.

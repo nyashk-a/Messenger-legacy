@@ -204,3 +204,4 @@ C:\Users\suzi\Documents\projects\csP\Messenger\SharedTests\bin\Release\net10.0\l
 C:\Users\suzi\Documents\projects\csP\Messenger\SharedTests\bin\Release\net10.0\linux-x64\libhostpolicy.so
 C:\Users\suzi\Documents\projects\csP\Messenger\SharedTests\bin\Release\net10.0\linux-x64\libmscordaccore.so
 C:\Users\suzi\Documents\projects\csP\Messenger\SharedTests\bin\Release\net10.0\linux-x64\libmscordbi.so
+C:\Users\suzi\Documents\projects\csP\Messenger\SharedTests\bin\Release\net10.0\linux-x64\Shared.pdb

@@ -62,11 +62,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Reference Include="DateTime4b">
-	    <HintPath>..\Shared\current versions\Shared\DateTime4b.dll</HintPath>
+	  <Reference Include="AVcontrol">
+	    <HintPath>..\Shared\current versions\AVcontrol.dll</HintPath>
 	  </Reference>
 	  <Reference Include="Shared">
-	    <HintPath>..\Shared\current versions\Shared\Shared.dll</HintPath>
+	    <HintPath>..\Shared\current versions\Shared.dll</HintPath>
 	  </Reference>
 	</ItemGroup>
 

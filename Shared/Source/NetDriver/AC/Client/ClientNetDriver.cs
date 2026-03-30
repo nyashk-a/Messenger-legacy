@@ -22,5 +22,12 @@ namespace Shared.Source.NetDriver.AC.Client
             _backgroundTasks.Add(ListeningSocket(socket));
             processor = Processor;
         }
+
+        public override void Shutdown()
+        {
+            socket.Close();
+            socket.Dispose();
+            base.Shutdown();
+        }
     }
 }

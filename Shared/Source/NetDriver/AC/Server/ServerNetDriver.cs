@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Shared.Source.NetDriver.AC.Server
@@ -19,6 +20,7 @@ namespace Shared.Source.NetDriver.AC.Server
         );
 
         public readonly ConcurrentDictionary<Socket, Task> Users = new();
+        private readonly CancellationTokenSource _cts = new();
         public ServerNetDriver(Func<Request, Task> Processor, IPEndPoint endPoint)
         {
             processor = Processor;
@@ -35,7 +37,7 @@ namespace Shared.Source.NetDriver.AC.Server
         {
             while (true)
             {
-                var clientConnection = await socket.AcceptAsync();
+                var clientConnection = await socket.AcceptAsync(_cts.Token);
                 Users.TryAdd(clientConnection, ListeningSocket(clientConnection));
             }
         }
@@ -44,12 +46,15 @@ namespace Shared.Source.NetDriver.AC.Server
         {
             try
             {
+                _cts.Cancel();
                 foreach (var s in Users)
                 {
-                    s.Value.Dispose();
                     s.Key.Close();
                     s.Key.Dispose();
                 }
+                socket.Close();
+                socket.Dispose();
+                _cts.Dispose();
                 base.Shutdown();
             }
             catch (Exception e)

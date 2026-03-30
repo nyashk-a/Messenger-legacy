@@ -23,6 +23,7 @@ namespace Shared.Source.NetDriver.AC
         protected readonly Channel<Request> _incomingChannel = Channel.CreateUnbounded<Request>();
         protected readonly ConcurrentBag<Task> _backgroundTasks = new();
         private readonly CancellationTokenSource _cts = new();
+        private volatile bool endWorking = false;
 
         public readonly string LOGFOLDER = "logs.txt";
 
@@ -45,6 +46,7 @@ namespace Shared.Source.NetDriver.AC
         public virtual void Shutdown()
         {
             Console.WriteLine("\nЗапущен процесс закрытия.\nдождитесь его окончания.");
+            endWorking = true;
             try
             {
                 _cts.Cancel();
@@ -77,11 +79,11 @@ namespace Shared.Source.NetDriver.AC
 
 
 
-        protected async Task<Exception> ListeningSocket(Socket sock)
+        protected async Task<Exception?> ListeningSocket(Socket sock)
         {
             try
             {
-                while (true)
+                while (!endWorking)
                 {
                     // reading pack
                     var lenghtBuffer = new byte[12];
@@ -133,6 +135,7 @@ namespace Shared.Source.NetDriver.AC
                 DebugTool.Log(new DebugTool.log(DebugTool.log.Level.Error, ex.Message, LOGFOLDER));
                 return ex;
             }
+            return null;
         }
 
 
