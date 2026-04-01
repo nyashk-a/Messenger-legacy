@@ -9,7 +9,8 @@ namespace MessengerServer
     {
         public async Task ProcessedTasks(Request req)
         {
-            Console.WriteLine("nothig here . . . . .");
+            // здесь буквально прописывается все, что от нас потребует UCS
+            // все возможности есть - бд настроена, нет-драйвер есть. остается только UCS
         }
     }
 }
