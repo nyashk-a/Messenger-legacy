@@ -1,4 +1,6 @@
 ﻿using Microsoft.Data.Sqlite;
+using Microsoft.Maui.ApplicationModel;
+using Microsoft.Maui.Controls.PlatformConfiguration;
 using Shared.Source.tools;
 using System;
 using System.Collections.Generic;
@@ -100,98 +102,186 @@ namespace Shared.Source.SQLiteHandler.AB
 
 
         // у нас железокаменно существует айдишник строки. всегда. и он всегда называется "rID"
-        public async Task<int?> InsertRow(SqliteConnection? sqc=null)
+        public async Task<int?> InsertRow(string args="DEFAULT VALUES", SqliteConnection? sqc=null)
         {
+            SqliteConnection connection;
             if (sqc == null)
             {
-                using (SqliteConnection connection = new($"Data Source={DatabasePath}"))
-                {
-                    await connection.OpenAsync();
-                    try
-                    {
-                        var cmd = connection.CreateCommand();
-                        cmd.CommandText = $"INSERT INTO {TableName} DEFAULT VALUES; SELECT last_insert_rowid();";
-                        var newId = await cmd.ExecuteScalarAsync();
-                        return newId != null ? Convert.ToInt32(newId) : null;
-                    }
-                    catch (Exception ex)
-                    {
-                        DebugTool.Log(new DebugTool.log(
-                            DebugTool.log.Level.Warning,
-                            $"can`t insert row: {ex}",
-                            TableName
-                        ));
-                        return null;
-                    }
-                }
+                connection = new($"Data Source={DatabasePath}");
+                await connection.OpenAsync();
             }
             else
             {
-                try
+                connection = sqc;
+            }
+            try
+            {
+                var cmd = connection.CreateCommand();
+                cmd.CommandText = $"INSERT INTO {TableName} {args}; SELECT last_insert_rowid();";
+                var newId = await cmd.ExecuteScalarAsync();
+
+                if (sqc == null) await connection.DisposeAsync();
+                return newId != null ? Convert.ToInt32(newId) : null;
+            }
+            catch (Exception ex)
+            {
+                DebugTool.Log(new DebugTool.log(
+                    DebugTool.log.Level.Warning,
+                    $"can`t insert row: {ex}",
+                    TableName
+                ));
+                if (sqc == null) await connection.DisposeAsync();
+                return null;
+            }
+        }
+
+        public async Task<(int startRID, int endRID)?> InsertRow(string[]? args, SqliteConnection? sqc = null)
+        {
+            if (args == null) return null;
+
+            SqliteConnection connection;
+            if (sqc == null)
+            {
+                connection = new($"Data Source={DatabasePath}");
+                await connection.OpenAsync();
+            }
+            else
+            {
+                connection = sqc;
+            }
+
+            try
+            {
+                var cmd = connection.CreateCommand();
+
+                string arg = string.Join(", ", args);
+
+                cmd.CommandText = $"INSERT INTO {TableName} {arg}; SELECT last_insert_rowid();";
+                var newId = await cmd.ExecuteScalarAsync();
+
+                if (sqc == null) await connection.DisposeAsync();
+
+                return newId != null ? (Convert.ToInt32(newId) - args.Length, Convert.ToInt32(newId)) : null;
+            }
+            catch (Exception ex)
+            {
+                DebugTool.Log(new DebugTool.log(
+                    DebugTool.log.Level.Warning,
+                    $"can`t insert row: {ex}",
+                    TableName
+                ));
+                if (sqc == null) await connection.DisposeAsync();
+                return null;
+            }
+        }
+
+        public async Task<(int startRID, int endRID)?> InsertRow(int rowCol, SqliteConnection? sqc = null)
+        {
+            if (rowCol < 1) return null;
+
+            SqliteConnection connection;
+            if (sqc == null)
+            {
+                connection = new($"Data Source={DatabasePath}");
+                await connection.OpenAsync();
+            }
+            else
+            {
+                connection = sqc;
+            }
+
+            try
+            {
+                var cmd = connection.CreateCommand();
+
+                var sb = new StringBuilder();
+                sb.Append("DEFAULT VALUES");
+                for (int i = 1; i < rowCol; i++)
                 {
-                    var cmd = sqc.CreateCommand();
-                    cmd.CommandText = $"INSERT INTO {TableName} DEFAULT VALUES; SELECT last_insert_rowid();";
-                    var newId = await cmd.ExecuteScalarAsync();
-                    return newId != null ? Convert.ToInt32(newId) : null;
+                    sb.Append(", DEFAULT VALUES");
                 }
-                catch (Exception ex)
-                {
-                    DebugTool.Log(new DebugTool.log(
-                        DebugTool.log.Level.Warning,
-                        $"can`t insert row: {ex}",
-                        TableName
-                    ));
-                    return null;
-                }
+                var arg = sb.ToString();
+
+                cmd.CommandText = $"INSERT INTO {TableName} {arg}; SELECT last_insert_rowid();";
+                var newId = await cmd.ExecuteScalarAsync();
+
+                if (sqc == null) await connection.DisposeAsync();
+
+                return newId != null ? (Convert.ToInt32(newId) - rowCol, Convert.ToInt32(newId)) : null;
+            }
+            catch (Exception ex)
+            {
+                DebugTool.Log(new DebugTool.log(
+                    DebugTool.log.Level.Warning,
+                    $"can`t insert row: {ex}",
+                    TableName
+                ));
+                if (sqc == null) await connection.DisposeAsync();
+                return null;
             }
         }
 
         public async Task RemoveRow(int rID, SqliteConnection? sqc=null)
         {
+            SqliteConnection connection;
             if (sqc == null)
             {
-                using (SqliteConnection connection = new($"Data Source={DatabasePath}"))
-                {
-                    await connection.OpenAsync();
-                    try
-                    {
-                        var cmd = connection.CreateCommand();
-                        cmd.CommandText = $"DELETE FROM {TableName} WHERE rID=@rid";
-
-                        cmd.Parameters.AddWithValue("@rid", rID);
-
-                        await cmd.ExecuteNonQueryAsync();
-                    }
-                    catch (Exception ex)
-                    {
-                        DebugTool.Log(new DebugTool.log(
-                        DebugTool.log.Level.Warning,
-                        $"can't remove row: {ex}",
-                        TableName
-                    ));
-                    }
-                }
+                connection = new($"Data Source={DatabasePath}");
+                await connection.OpenAsync();
             }
             else
             {
-                try
-                {
-                    var cmd = sqc.CreateCommand();
-                    cmd.CommandText = $"DELETE FROM {TableName} WHERE rID=@rid";
-
-                    cmd.Parameters.AddWithValue("@rid", rID);
-
-                    await cmd.ExecuteNonQueryAsync();
-                }
-                catch (Exception ex)
-                {
-                    DebugTool.Log(new DebugTool.log(
-                    DebugTool.log.Level.Warning,
-                    $"can't remove row: {ex}",
-                    TableName
-                ));
-                }
+                connection = sqc;
             }
+            try
+            {
+                var cmd = connection.CreateCommand();
+                cmd.CommandText = $"DELETE FROM {TableName} WHERE rID=@rid";
+
+                cmd.Parameters.AddWithValue("@rid", rID);
+
+                await cmd.ExecuteNonQueryAsync();
+            }
+            catch (Exception ex)
+            {
+                DebugTool.Log(new DebugTool.log(
+                DebugTool.log.Level.Warning,
+                $"can't remove row: {ex}",
+                TableName
+            ));
+            }
+            if (sqc == null) await connection.DisposeAsync();
+        }
+
+        public async Task RemoveRow(int[] rIDs, SqliteConnection? sqc = null)
+        {
+            SqliteConnection connection;
+            if (sqc == null)
+            {
+                connection = new($"Data Source={DatabasePath}");
+                await connection.OpenAsync();
+            }
+            else
+            {
+                connection = sqc;
+            }
+            try
+            {
+                var cmd = connection.CreateCommand();
+                string idList = string.Join(", ", rIDs);
+                cmd.CommandText = $"DELETE FROM {TableName} WHERE rID IN ({idList})";
+
+                await cmd.ExecuteNonQueryAsync();
+            }
+            catch (Exception ex)
+            {
+                DebugTool.Log(new DebugTool.log(
+                DebugTool.log.Level.Warning,
+                $"can't remove row: {ex}",
+                TableName
+            ));
+            }
+            if (sqc == null) await connection.DisposeAsync();
         }
 
         public async Task SetValue<T>(int rID, string columnName, T value, SqliteConnection? sqc = null)
@@ -205,53 +295,35 @@ namespace Shared.Source.SQLiteHandler.AB
                     ));
                 return;
             }
-
+            SqliteConnection connection;
             if (sqc == null)
             {
-                using (SqliteConnection connection = new($"Data Source={DatabasePath}"))
-                {
-                    await connection.OpenAsync();
-                    try
-                    {
-                        var cmd = connection.CreateCommand();
-                        cmd.CommandText = $"UPDATE {TableName} SET \"{columnName}\" = @value WHERE rID = @rID";
-
-                        cmd.Parameters.AddWithValue("@value", value);
-                        cmd.Parameters.AddWithValue("@rID", rID);
-
-                        await cmd.ExecuteNonQueryAsync();
-                    }
-                    catch (Exception ex)
-                    {
-                        DebugTool.Log(new DebugTool.log(
-                        DebugTool.log.Level.Warning,
-                        $"can't update row: {ex}",
-                        TableName
-                    ));
-                    }
-                }
+                connection = new($"Data Source={DatabasePath}");
+                await connection.OpenAsync();
             }
             else
             {
-                try
-                {
-                    var cmd = sqc.CreateCommand();
-                    cmd.CommandText = $"UPDATE {TableName} SET \"{columnName}\" = @value WHERE rID = @rID";
-
-                    cmd.Parameters.AddWithValue("@value", value);
-                    cmd.Parameters.AddWithValue("@rID", rID);
-
-                    await cmd.ExecuteNonQueryAsync();
-                }
-                catch (Exception ex)
-                {
-                    DebugTool.Log(new DebugTool.log(
-                    DebugTool.log.Level.Warning,
-                    $"can't update row: {ex}",
-                    TableName
-                ));
-                }
+                connection = sqc;
             }
+            try
+            {
+                var cmd = connection.CreateCommand();
+                cmd.CommandText = $"UPDATE {TableName} SET \"{columnName}\" = @value WHERE rID = @rID";
+
+                cmd.Parameters.AddWithValue("@value", value);
+                cmd.Parameters.AddWithValue("@rID", rID);
+
+                await cmd.ExecuteNonQueryAsync();
+            }
+            catch (Exception ex)
+            {
+                DebugTool.Log(new DebugTool.log(
+                DebugTool.log.Level.Warning,
+                $"can't update row: {ex}",
+                TableName
+            ));
+            }
+            if (sqc == null) await connection.DisposeAsync();
         }
 
         public async Task<T?> GetValue<T>(int rID, string columnName, SqliteConnection? sqc=null)
@@ -267,81 +339,51 @@ namespace Shared.Source.SQLiteHandler.AB
             }
 
 
+            SqliteConnection connection;
             if (sqc == null)
             {
-                using (SqliteConnection connection = new($"Data Source={DatabasePath}"))
+                connection = new($"Data Source={DatabasePath}");
+                await connection.OpenAsync();
+            }
+            else
+            {
+                connection = sqc;
+            }
+            try
+            {
+                var cmd = connection.CreateCommand();
+                cmd.CommandText = $"SELECT \"{columnName}\" FROM {TableName} WHERE rID=@rid";
+
+                cmd.Parameters.AddWithValue("@rid", rID);
+
+                using (var reader = await cmd.ExecuteReaderAsync())
                 {
-                    await connection.OpenAsync();
-                    try
+                    if (await reader.ReadAsync())
                     {
-                        var cmd = connection.CreateCommand();
-                        cmd.CommandText = $"SELECT \"{columnName}\" FROM {TableName} WHERE rID=@rid";
+                        object value = reader[0];
 
-                        cmd.Parameters.AddWithValue("@rid", rID);
+                        if (value == DBNull.Value)
+                            return default;
 
-                        using (var reader = await cmd.ExecuteReaderAsync())
-                        {
-                            if (await reader.ReadAsync())
-                            {
-                                object value = reader[0];
-
-                                if (value == DBNull.Value)
-                                    return default;
-
-                                return (T)Convert.ChangeType(value, typeof(T));
-                            }
-                            else
-                            {
-                                return default;
-                            }
-                        }
+                        if (sqc == null) await connection.DisposeAsync();
+                        return (T)Convert.ChangeType(value, typeof(T));
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        DebugTool.Log(new DebugTool.log(
-                            DebugTool.log.Level.Warning,
-                            $"some err in get val: {ex}",
-                            TableName
-                        ));
+                        if (sqc == null) await connection.DisposeAsync();
                         return default;
                     }
                 }
             }
-            else
+            catch (Exception ex)
             {
-                try
-                {
-                    var cmd = sqc.CreateCommand();
-                    cmd.CommandText = $"SELECT \"{columnName}\" FROM {TableName} WHERE rID=@rid";
-
-                    cmd.Parameters.AddWithValue("@rid", rID);
-
-                    using (var reader = await cmd.ExecuteReaderAsync())
-                    {
-                        if (await reader.ReadAsync())
-                        {
-                            object value = reader[0];
-
-                            if (value == DBNull.Value)
-                                return default;
-
-                            return (T)Convert.ChangeType(value, typeof(T));
-                        }
-                        else
-                        {
-                            return default;
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    DebugTool.Log(new DebugTool.log(
-                        DebugTool.log.Level.Warning,
-                        $"some err in get val: {ex}",
-                        TableName
-                    ));
-                    return default;
-                }
+                DebugTool.Log(new DebugTool.log(
+                    DebugTool.log.Level.Warning,
+                    $"some err in get val: {ex}",
+                    TableName
+                ));
+                if (sqc == null) await connection.DisposeAsync();
+                return default;
             }
         }
 
@@ -360,81 +402,50 @@ namespace Shared.Source.SQLiteHandler.AB
                 }
             }
 
+
+
+            SqliteConnection connection;
             if (sqc == null)
             {
-                using (SqliteConnection connection = new($"Data Source={DatabasePath}"))
-                {
-                    await connection.OpenAsync();
-                    try
-                    {
-                        var cmd = connection.CreateCommand();
-
-                        string clmn = string.Join(", ", columnNames);
-
-                        cmd.CommandText = $"SELECT {clmn} FROM {TableName} WHERE rID=@rid";
-
-                        cmd.Parameters.AddWithValue("@rid", rID);
-
-                        List<object> ans = new List<object>();
-                        using (var reader = await cmd.ExecuteReaderAsync())
-                        {
-                            if (await reader.ReadAsync())
-                            {
-                                var values = new object[reader.FieldCount];
-                                reader.GetValues(values);
-                                ans.AddRange(values);
-                            }
-                            return ans;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        DebugTool.Log(new DebugTool.log(
-                            DebugTool.log.Level.Warning,
-                            $"some err in get val: {ex}",
-                            TableName
-                        ));
-                        return null;
-                    }
-                }
+                connection = new($"Data Source={DatabasePath}");
+                await connection.OpenAsync();
             }
             else
             {
-                try
-                {
-                    var cmd = sqc.CreateCommand();
-                    var sb = new StringBuilder();
-                    foreach (var cl in columnNames)
-                    {
-                        if (sb.Length > 0) sb.Append(", ");
-                        sb.Append($"\"{cl}\"");
-                    }
-                    string clmn = sb.ToString();
-                    cmd.CommandText = $"SELECT {clmn} FROM {TableName} WHERE rID=@rid";
+                connection = sqc;
+            }
+            try
+            {
+                var cmd = connection.CreateCommand();
 
-                    cmd.Parameters.AddWithValue("@rid", rID);
+                string clmn = string.Join(", ", columnNames);
 
-                    List<object> ans = new List<object>();
-                    using (var reader = await cmd.ExecuteReaderAsync())
-                    {
-                        if (await reader.ReadAsync())
-                        {
-                            var values = new object[reader.FieldCount];
-                            reader.GetValues(values);
-                            ans.AddRange(values);
-                        }
-                        return ans;
-                    }
-                }
-                catch (Exception ex)
+                cmd.CommandText = $"SELECT {clmn} FROM {TableName} WHERE rID=@rid";
+
+                cmd.Parameters.AddWithValue("@rid", rID);
+
+                List<object> ans = new List<object>();
+                using (var reader = await cmd.ExecuteReaderAsync())
                 {
-                    DebugTool.Log(new DebugTool.log(
-                        DebugTool.log.Level.Warning,
-                        $"some err in get val: {ex}",
-                        TableName
-                    ));
-                    return null;
+                    if (await reader.ReadAsync())
+                    {
+                        var values = new object[reader.FieldCount];
+                        reader.GetValues(values);
+                        ans.AddRange(values);
+                    }
+                    if (sqc == null) await connection.DisposeAsync();
+                    return ans;
                 }
+            }
+            catch (Exception ex)
+            {
+                DebugTool.Log(new DebugTool.log(
+                    DebugTool.log.Level.Warning,
+                    $"some err in get val: {ex}",
+                    TableName
+                ));
+                if (sqc == null) await connection.DisposeAsync();
+                return null;
             }
         }
 
@@ -450,81 +461,54 @@ namespace Shared.Source.SQLiteHandler.AB
                 return null;
             }
 
+            SqliteConnection connection;
             if (sqc == null)
             {
-                using (SqliteConnection connection = new($"Data Source={DatabasePath}"))
+                connection = new($"Data Source={DatabasePath}");
+                await connection.OpenAsync();
+            }
+            else
+            {
+                connection = sqc;
+            }
+            try
+            {
+                var cmd = connection.CreateCommand();
+                cmd.CommandText = $"SELECT rID FROM {TableName} WHERE \"{columnName}\"=@columnVal ";
+
+                cmd.Parameters.AddWithValue("@columnVal", columnVal);
+
+                using (var reader = await cmd.ExecuteReaderAsync())
                 {
-                    await connection.OpenAsync();
-                    try
+                    if (await reader.ReadAsync())
                     {
-                        var cmd = connection.CreateCommand();
-                        cmd.CommandText = $"SELECT rID FROM {TableName} WHERE \"{columnName}\"=@columnVal ";
+                        object value = reader[0];
 
-                        cmd.Parameters.AddWithValue("@columnVal", columnVal);
-
-                        using (var reader = await cmd.ExecuteReaderAsync())
+                        if (value == DBNull.Value)
                         {
-                            if (await reader.ReadAsync())
-                            {
-                                object value = reader[0];
-
-                                if (value == DBNull.Value)
-                                    return default;
-
-                                return (int)value;
-                            }
-                            else
-                            {
-                                return null;
-                            }
+                            if (sqc == null) await connection.DisposeAsync();
+                            return default;
                         }
+
+                        if (sqc == null) await connection.DisposeAsync();
+                        return (int)value;
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        DebugTool.Log(new DebugTool.log(
-                            DebugTool.log.Level.Warning,
-                            $"some err in get rID by val: {ex}",
-                            TableName
-                        ));
+                        if (sqc == null) await connection.DisposeAsync();
                         return null;
                     }
                 }
             }
-            else
+            catch (Exception ex)
             {
-                try
-                {
-                    var cmd = sqc.CreateCommand();
-                    cmd.CommandText = $"SELECT rID FROM {TableName} WHERE \"{columnName}\"=@columnVal ";
-
-                    cmd.Parameters.AddWithValue("@columnVal", columnVal);
-
-                    using (var reader = await cmd.ExecuteReaderAsync())
-                    {
-                        if (await reader.ReadAsync())
-                        {
-                            object value = reader[0];
-
-                            if (value == DBNull.Value)
-                                return default;
-
-                            return (int)value;
-                        }
-                        else
-                        {
-                            return null;
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    DebugTool.Log(new DebugTool.log(
-                        DebugTool.log.Level.Warning,
-                        $"some err in get rID by val: {ex}",
-                        TableName
-                    ));
-                    return null;
-                }
+                DebugTool.Log(new DebugTool.log(
+                    DebugTool.log.Level.Warning,
+                    $"some err in get rID by val: {ex}",
+                    TableName
+                ));
+                if (sqc == null) await connection.DisposeAsync();
+                return null;
             }
         }
 

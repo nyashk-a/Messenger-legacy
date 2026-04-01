@@ -139,5 +139,78 @@ namespace Shared.Source.SQLiteHandler.AB
             TableList.TryGetValue(tableName, out var table);
             return table;
         }
+
+
+        public static async Task<List<Dictionary<string, object>>> ExecuteQueryAsync(string sql, SqliteConnection? sqc = null)
+        {
+            var results = new List<Dictionary<string, object>>();
+            bool ownsConnection = sqc == null;
+            SqliteConnection connection = sqc ?? CreateConnection();
+
+            try
+            {
+                if (ownsConnection)
+                    await connection.OpenAsync();
+
+                using var command = connection.CreateCommand();
+                command.CommandText = sql;
+
+                using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    var row = new Dictionary<string, object>();
+                    for (int i = 0; i < reader.FieldCount; i++)
+                    {
+                        row[reader.GetName(i)] = reader.GetValue(i);
+                    }
+                    results.Add(row);
+                }
+            }
+            catch (Exception ex)
+            {
+                DebugTool.Log(new DebugTool.log(
+                    DebugTool.log.Level.Error,
+                    $"Error executing query: {ex.Message}\nSQL: {sql}",
+                    "TableControllerLogs.txt"
+                ));
+                throw;
+            }
+            finally
+            {
+                if (ownsConnection)
+                    await connection.DisposeAsync();
+            }
+
+            return results;
+        }
+        public static async Task ExecuteNonQueryAsync(string sql, SqliteConnection? sqc = null)
+        {
+            bool ownsConnection = sqc == null;
+            SqliteConnection connection = sqc ?? CreateConnection();
+
+            try
+            {
+                if (ownsConnection)
+                    await connection.OpenAsync();
+
+                using var command = connection.CreateCommand();
+                command.CommandText = sql;
+                await command.ExecuteNonQueryAsync();
+            }
+            catch (Exception ex)
+            {
+                DebugTool.Log(new DebugTool.log(
+                    DebugTool.log.Level.Error,
+                    $"Error executing non-query: {ex.Message}\nSQL: {sql}",
+                    "TableControllerLogs.txt"
+                ));
+                throw;
+            }
+            finally
+            {
+                if (ownsConnection)
+                    await connection.DisposeAsync();
+            }
+        }
     }
 }
