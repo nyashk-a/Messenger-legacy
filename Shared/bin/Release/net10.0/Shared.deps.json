@@ -8,23 +8,11 @@
     ".NETCoreApp,Version=v10.0": {
       "Shared/1.0.0": {
         "dependencies": {
-          "Microsoft.Data.Sqlite.Core": "10.0.5",
           "Microsoft.Maui.Controls": "10.0.51",
           "AVcontrol": "2.6.0.0"
         },
         "runtime": {
           "Shared.dll": {}
-        }
-      },
-      "Microsoft.Data.Sqlite.Core/10.0.5": {
-        "dependencies": {
-          "SQLitePCLRaw.core": "2.1.11"
-        },
-        "runtime": {
-          "lib/net8.0/Microsoft.Data.Sqlite.dll": {
-            "assemblyVersion": "10.0.5.0",
-            "fileVersion": "10.0.526.15411"
-          }
         }
       },
       "Microsoft.Extensions.Configuration/10.0.0": {
@@ -325,14 +313,6 @@
           }
         }
       },
-      "SQLitePCLRaw.core/2.1.11": {
-        "runtime": {
-          "lib/netstandard2.0/SQLitePCLRaw.core.dll": {
-            "assemblyVersion": "2.1.11.2622",
-            "fileVersion": "2.1.11.2622"
-          }
-        }
-      },
       "AVcontrol/2.6.0.0": {
         "runtime": {
           "AVcontrol.dll": {
@@ -348,13 +328,6 @@
       "type": "project",
       "serviceable": false,
       "sha512": ""
-    },
-    "Microsoft.Data.Sqlite.Core/10.0.5": {
-      "type": "package",
-      "serviceable": true,
-      "sha512": "sha512-jFYXnh7s0RShCw6Vkf+ReGCw+mVi7ISg1YaEzYCJcXnUifmbW+aqvCsRJuSRj2ZuQ+oqetpjxlZtbpMmk5FKqQ==",
-      "path": "microsoft.data.sqlite.core/10.0.5",
-      "hashPath": "microsoft.data.sqlite.core.10.0.5.nupkg.sha512"
     },
     "Microsoft.Extensions.Configuration/10.0.0": {
       "type": "package",
@@ -474,13 +447,6 @@
       "sha512": "sha512-1oSojQn4xnSA7tVu6xILmxD24aAMqmiPqRKfavuhp3apCon4KV70Ic/5S3DvbQ67tFloAsv9JOybR2qa65m51g==",
       "path": "microsoft.maui.graphics/10.0.51",
       "hashPath": "microsoft.maui.graphics.10.0.51.nupkg.sha512"
-    },
-    "SQLitePCLRaw.core/2.1.11": {
-      "type": "package",
-      "serviceable": true,
-      "sha512": "sha512-PK0GLFkfhZzLQeR3PJf71FmhtHox+U3vcY6ZtswoMjrefkB9k6ErNJEnwXqc5KgXDSjige2XXrezqS39gkpQKA==",
-      "path": "sqlitepclraw.core/2.1.11",
-      "hashPath": "sqlitepclraw.core.2.1.11.nupkg.sha512"
     },
     "AVcontrol/2.6.0.0": {
       "type": "reference",

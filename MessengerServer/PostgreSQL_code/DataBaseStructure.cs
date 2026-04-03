@@ -1,7 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Text;
+﻿using System.ComponentModel.DataAnnotations;
+
+
 
 namespace MessengerServer
 {
@@ -10,6 +9,10 @@ namespace MessengerServer
     /*
     * File.db
     *      Users                           (table)
+    *          deviceCount (UInt8)
+    *          sessionID   (UInt64[DeviceCount])   МАССИВ для быстрой авторизационной проверки данных от клиентов (по одному для каждого устройства)
+    *          isSynced    (BOOL  [DeviceCount])   МАССИВ BOOL нужных для синхронизации динамических ключей шифрования между разными устройствами одного пользователя (по одному для каждого устройства)
+    *      
     *          rID         (primary key)
     *          SUID        (UInt64)
     *          Name        (VRCHAR(40))
