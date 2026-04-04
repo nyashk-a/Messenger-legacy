@@ -8,6 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.5" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Reference Include="AVcontrol">
       <HintPath>..\Shared\current versions\AVcontrol.dll</HintPath>
     </Reference>

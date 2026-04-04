@@ -23,7 +23,6 @@ namespace MessengerServer
             var tskHndl = new TaskHandler();
 
             var Server = new ServerNetDriver(tskHndl.ProcessedTasks, new IPEndPoint(IPAddress.Any, 22222));
-
         }
     }
 }
