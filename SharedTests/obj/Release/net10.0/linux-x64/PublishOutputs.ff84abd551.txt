@@ -190,6 +190,11 @@ C:\Users\suzi\Downloads\clientBuild\libhostfxr.so
 C:\Users\suzi\Downloads\clientBuild\libhostpolicy.so
 C:\Users\suzi\Downloads\clientBuild\libmscordaccore.so
 C:\Users\suzi\Downloads\clientBuild\libmscordbi.so
+C:\Users\suzi\Downloads\clientBuild\Microsoft.Data.Sqlite.dll
+C:\Users\suzi\Downloads\clientBuild\SQLitePCLRaw.batteries_v2.dll
+C:\Users\suzi\Downloads\clientBuild\SQLitePCLRaw.core.dll
+C:\Users\suzi\Downloads\clientBuild\SQLitePCLRaw.provider.e_sqlite3.dll
+C:\Users\suzi\Downloads\clientBuild\libe_sqlite3.so
 C:\Users\suzi\Downloads\clientBuild\AVcontrol.dll
 C:\Users\suzi\Downloads\clientBuild\Shared.dll
 C:\Users\suzi\Downloads\clientBuild\Shared.pdb

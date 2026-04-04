@@ -205,3 +205,8 @@ C:\Users\suzi\Documents\projects\csP\Messenger\SharedTests\bin\Release\net10.0\l
 C:\Users\suzi\Documents\projects\csP\Messenger\SharedTests\bin\Release\net10.0\linux-x64\libmscordaccore.so
 C:\Users\suzi\Documents\projects\csP\Messenger\SharedTests\bin\Release\net10.0\linux-x64\libmscordbi.so
 C:\Users\suzi\Documents\projects\csP\Messenger\SharedTests\bin\Release\net10.0\linux-x64\Shared.pdb
+C:\Users\suzi\Documents\projects\csP\Messenger\SharedTests\bin\Release\net10.0\linux-x64\Microsoft.Data.Sqlite.dll
+C:\Users\suzi\Documents\projects\csP\Messenger\SharedTests\bin\Release\net10.0\linux-x64\SQLitePCLRaw.batteries_v2.dll
+C:\Users\suzi\Documents\projects\csP\Messenger\SharedTests\bin\Release\net10.0\linux-x64\SQLitePCLRaw.core.dll
+C:\Users\suzi\Documents\projects\csP\Messenger\SharedTests\bin\Release\net10.0\linux-x64\SQLitePCLRaw.provider.e_sqlite3.dll
+C:\Users\suzi\Documents\projects\csP\Messenger\SharedTests\bin\Release\net10.0\linux-x64\libe_sqlite3.so

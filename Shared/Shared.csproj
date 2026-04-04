@@ -13,7 +13,7 @@
 
   <ItemGroup>
     <Reference Include="AVcontrol">
-      <HintPath>..\lib\AVcontrol\AVcontrol.dll</HintPath>
+      <HintPath>current versions\AVcontrol.dll</HintPath>
     </Reference>
   </ItemGroup>
 

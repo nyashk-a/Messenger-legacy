@@ -6,11 +6,13 @@ using SharedTests.ClientSide;
 using SharedTests.ServerSide;
 using System.Net;
 using System.Net.Sockets;
+using JabrAPI;
 
 namespace SharedTests //                          DEMO
 {
     internal class Program
     {
+        public static string SEPARATOR = "~~`:`( •̀ .̫ •́ )✧`:`~~";
         public static async Task Main(string[] args)
         {
             Console.Write("Chose youre role (server (s) or user (u)): ");
@@ -25,7 +27,6 @@ namespace SharedTests //                          DEMO
                     serv.Dispose();
                     break;
                 case "u":
-                    Console.BackgroundColor = ConsoleColor.DarkCyan;
                     Console.Write("enter youre name: ");
                     string name = Console.ReadLine();
 
@@ -50,8 +51,6 @@ namespace SharedTests //                          DEMO
                     ConsoleController.Run();
                     break;
             }
-
-            Console.BackgroundColor = ConsoleColor.Black;
         }
     }
 }

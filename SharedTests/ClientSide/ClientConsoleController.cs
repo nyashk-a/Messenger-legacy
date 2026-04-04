@@ -9,6 +9,7 @@ namespace SharedTests.ClientSide
         public static Action<string>? NetworkAcept;
         public static Action? kill;
 
+
         private static readonly List<string> messages = new List<string>();
         private static readonly Queue<string> incomingMessages = new Queue<string>();
         private static readonly object queueLock = new object();
@@ -25,26 +26,36 @@ namespace SharedTests.ClientSide
         private static bool renderRequired = true;
         private static bool isRunning = true;
 
+        // Запоминаем предыдущие размеры окна для отслеживания изменений
+        private static int lastWidth;
+        private static int lastHeight;
+
+
         public static void Run()
         {
             Initialize();
 
             while (isRunning)
             {
-                // Ждём сигнал о новых сообщениях (до 10 мс)
+                // Проверяем изменение размера окна (даже без событий)
+                if (Console.WindowWidth != lastWidth || Console.WindowHeight != lastHeight)
+                {
+                    UpdateDimensions();
+                    Console.Clear();
+                    renderRequired = true;
+                }
+
                 if (messageEvent.WaitOne(10))
                 {
                     ProcessIncomingMessages();
                 }
 
-                // Обрабатываем все нажатия клавиш
                 while (Console.KeyAvailable)
                 {
                     var key = Console.ReadKey(true);
                     HandleKey(key);
                 }
 
-                // Если были изменения, перерисовываем
                 if (renderRequired)
                 {
                     Render();
@@ -76,7 +87,10 @@ namespace SharedTests.ClientSide
         {
             consoleWidth = Console.WindowWidth;
             consoleHeight = Console.WindowHeight;
-            historyAreaHeight = Math.Max(0, consoleHeight - 2);
+            lastWidth = consoleWidth;
+            lastHeight = consoleHeight;
+            // Оставляем минимум 2 строки: одна для разделителя, одна для ввода
+            historyAreaHeight = Math.Max(1, consoleHeight - 2);
         }
 
         private static void ProcessIncomingMessages()
@@ -100,18 +114,14 @@ namespace SharedTests.ClientSide
 
         private static void Render()
         {
-            // Проверяем изменение размеров окна
-            if (consoleWidth != Console.WindowWidth || consoleHeight != Console.WindowHeight)
-            {
-                UpdateDimensions();
-                Console.Clear();
-            }
+            // Скрываем курсор на время перерисовки (избегаем артефактов)
+            Console.CursorVisible = false;
 
-            // Разделитель
+            // Разделительная линия (декор)
             Console.SetCursorPosition(0, historyAreaHeight);
             Console.Write(new string('═', consoleWidth));
 
-            // История сообщений
+            // Область истории сообщений с декоративным префиксом
             int totalMessages = messages.Count;
             int firstVisibleIndex = Math.Max(0, totalMessages - historyAreaHeight - scrollOffset);
             int lastVisibleIndex = Math.Min(totalMessages, firstVisibleIndex + historyAreaHeight);
@@ -120,28 +130,39 @@ namespace SharedTests.ClientSide
             {
                 int messageIndex = firstVisibleIndex + i;
                 Console.SetCursorPosition(0, i);
+                string line;
 
                 if (messageIndex < lastVisibleIndex)
                 {
-                    string line = messages[messageIndex] + "\n";
+                    string rawMessage = messages[messageIndex];
+                    // Декор: добавляем символ "▶ " перед каждым сообщением
+                    string decorated = "> " + rawMessage;
+                    Console.ForegroundColor = ConsoleColor.Cyan;
+                    line = decorated;
                     if (line.Length > consoleWidth)
                         line = line.Substring(0, consoleWidth - 3) + "...";
-                    Console.Write(line.PadRight(consoleWidth));
+                    else
+                        line = line.PadRight(consoleWidth);
                 }
                 else
                 {
-                    Console.Write(new string(' ', consoleWidth));
+                    line = new string(' ', consoleWidth);
+                    Console.ResetColor();
                 }
+                Console.Write(line);
+                Console.ResetColor();
             }
 
-            // Строка ввода
+            // Строка ввода с префиксом "> "
             Console.SetCursorPosition(0, historyAreaHeight + 1);
             string inputLine = "> " + currentInput;
             if (inputLine.Length > consoleWidth)
                 inputLine = inputLine.Substring(0, consoleWidth);
-            Console.Write(inputLine.PadRight(consoleWidth));
+            else
+                inputLine = inputLine.PadRight(consoleWidth);
+            Console.Write(inputLine);
 
-            // Курсор
+            // Возвращаем курсор в позицию ввода
             int cursorDisplayPos = Math.Min(2 + cursorPos, consoleWidth - 1);
             Console.SetCursorPosition(cursorDisplayPos, historyAreaHeight + 1);
             Console.CursorVisible = true;
@@ -149,7 +170,7 @@ namespace SharedTests.ClientSide
 
         private static void HandleKey(ConsoleKeyInfo key)
         {
-            // Выход
+            // Выход по Escape или Ctrl+Q
             if (key.Key == ConsoleKey.Escape || (key.Modifiers == ConsoleModifiers.Control && key.Key == ConsoleKey.Q))
             {
                 kill?.Invoke();
@@ -157,12 +178,11 @@ namespace SharedTests.ClientSide
                 return;
             }
 
-            // Enter: отправка сообщения
+            // Enter – отправка сообщения
             if (key.Key == ConsoleKey.Enter)
             {
                 if (!string.IsNullOrWhiteSpace(currentInput))
                 {
-                    // Отправляем через сеть
                     NetworkAcept?.Invoke(currentInput);
                     currentInput = "";
                     cursorPos = 0;
@@ -263,22 +283,6 @@ namespace SharedTests.ClientSide
                 if (cursorPos < currentInput.Length)
                 {
                     currentInput = currentInput.Remove(cursorPos, 1);
-                    inputChanged = true;
-                }
-            }
-            else if (key.Key == ConsoleKey.Home)
-            {
-                if (cursorPos != 0)
-                {
-                    cursorPos = 0;
-                    inputChanged = true;
-                }
-            }
-            else if (key.Key == ConsoleKey.End)
-            {
-                if (cursorPos != currentInput.Length)
-                {
-                    cursorPos = currentInput.Length;
                     inputChanged = true;
                 }
             }

@@ -9,7 +9,8 @@
       "SharedTests/1.0.0": {
         "dependencies": {
           "Microsoft.Data.Sqlite": "10.0.5",
-          "AVcontrol": "2.6.0.0",
+          "AVcontrol": "2.6.1.0",
+          "JabrAPI": "5.0.0.0",
           "Shared": "1.0.0.0"
         },
         "runtime": {
@@ -184,11 +185,19 @@
           }
         }
       },
-      "AVcontrol/2.6.0.0": {
+      "AVcontrol/2.6.1.0": {
         "runtime": {
           "AVcontrol.dll": {
-            "assemblyVersion": "2.6.0.0",
-            "fileVersion": "2.6.0.0"
+            "assemblyVersion": "2.6.1.0",
+            "fileVersion": "2.6.1.0"
+          }
+        }
+      },
+      "JabrAPI/5.0.0.0": {
+        "runtime": {
+          "JabrAPI.dll": {
+            "assemblyVersion": "5.0.0.0",
+            "fileVersion": "5.0.0.0"
           }
         }
       },
@@ -250,7 +259,12 @@
       "path": "sqlitepclraw.provider.e_sqlite3/2.1.11",
       "hashPath": "sqlitepclraw.provider.e_sqlite3.2.1.11.nupkg.sha512"
     },
-    "AVcontrol/2.6.0.0": {
+    "AVcontrol/2.6.1.0": {
+      "type": "reference",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "JabrAPI/5.0.0.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""

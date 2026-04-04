@@ -13,10 +13,13 @@
 
   <ItemGroup>
     <Reference Include="AVcontrol">
-      <HintPath>..\Shared\current versions\AVcontrol.dll</HintPath>
+      <HintPath>..\Shared\current versions\Telegram Desktop\AVcontrol.dll</HintPath>
+    </Reference>
+    <Reference Include="JabrAPI">
+      <HintPath>..\Shared\current versions\jabr\JabrAPI.dll</HintPath>
     </Reference>
     <Reference Include="Shared">
-      <HintPath>..\Shared\current versions\Shared.dll</HintPath>
+      <HintPath>..\Shared\bin\Release\net10.0\Shared.dll</HintPath>
     </Reference>
   </ItemGroup>
 

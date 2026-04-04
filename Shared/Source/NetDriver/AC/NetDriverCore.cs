@@ -21,7 +21,8 @@ namespace Shared.Source.NetDriver.AC
         protected readonly Channel<Request> _dispatchChannel = Channel.CreateUnbounded<Request>();
         protected readonly Channel<Request> _incomingChannel = Channel.CreateUnbounded<Request>();
         protected readonly ConcurrentBag<Task> _backgroundTasks = new();
-        private readonly CancellationTokenSource _cts = new();
+        private readonly CancellationTokenSource _cts = new();                                      // глобальный под шутдаун
+        private Task _cleaningTask;
         private volatile bool endWorking = false;
 
         public readonly string LOGFOLDER = "logs.txt";
@@ -30,6 +31,7 @@ namespace Shared.Source.NetDriver.AC
         protected void InitalizeNetDriver()
         {
             Console.WriteLine("Внимение!\nВам не следует принудительно закрывать консоль!\nпри принудительном закрытии нарушится логика завершения процессов!");
+            _cleaningTask = RemoveCompletedTasksAsync(_cts.Token);
             try
             {
                 DebugTool.StartDebugTool();
@@ -69,6 +71,7 @@ namespace Shared.Source.NetDriver.AC
 
                 DebugTool.Shutdown().Wait(TimeSpan.FromSeconds(2));
                 _cts.Dispose();
+                _cleaningTask.Dispose();
             }
             catch (Exception e)
             {
@@ -76,22 +79,18 @@ namespace Shared.Source.NetDriver.AC
             }
         }
 
-
-
-        protected async Task<Exception?> ListeningSocket(Socket sock)
+        protected async Task<Exception?> ListeningSocket(Socket sock, CancellationToken Token)
         {
-            try
+            while (!endWorking && !Token.IsCancellationRequested)
             {
-                while (!endWorking)
+                try
                 {
-                    // reading pack
                     var lenghtBuffer = new byte[12];
                     int read = 0;
                     while (read < lenghtBuffer.Length)
                     {
                         read += await sock.ReceiveAsync(lenghtBuffer.AsMemory(read, 12 - read));
                     }
-
                     var sc = Message.PartialParse(lenghtBuffer);
 
                     if (sc.idSize != 16 || sc.contentSize > int.MaxValue)
@@ -107,12 +106,11 @@ namespace Shared.Source.NetDriver.AC
                     read = 0;
                     while (read < sc.size)
                     {
-                        read += await sock.ReceiveAsync(mainBuffer.AsMemory(12 + read, sc.size - read));
+                        read += await sock.ReceiveAsync(mainBuffer.AsMemory(12 + read, sc.size - read), Token);
                     }
 
                     var rq = new Request(new Message(mainBuffer), sock);
 
-                    // end reading
 
                     if (rq.message.serialNumber != -1)
                     {
@@ -123,22 +121,23 @@ namespace Shared.Source.NetDriver.AC
                     if (_pendingRequests.TryGetValue(rq.message.msgsuid, out var rqOut))
                     {
                         rqOut.GetAnswer(rq);
+                        _pendingRequests.TryRemove(rq.message.msgsuid, out _);
                         continue;
                     }
 
                     _incomingChannel.Writer.TryWrite(rq);
                 }
+                catch (Exception ex)
+                {
+                    DebugTool.Log(new DebugTool.log(DebugTool.log.Level.Error, ex.Message, LOGFOLDER));
+                }
             }
-            catch (Exception ex)
-            {
-                DebugTool.Log(new DebugTool.log(DebugTool.log.Level.Error, ex.Message, LOGFOLDER));
-                return ex;
-            }
+            
             return null;
         }
 
 
-        public async Task<Message?> SendReqMessageAsync(Socket sock, Message msg)                 // ожидаем ответ
+        public async Task<Message?> SendReqMessageAsync(Socket sock, Message msg)                   // ожидаем ответ
         {
             try
             {
@@ -156,7 +155,7 @@ namespace Shared.Source.NetDriver.AC
 
                 using (cts.Token.Register(() => tcs.TrySetCanceled()))
                 {
-                    var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(-1, cts.Token));
+                    var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(Timeout.Infinite, cts.Token));
                     if (completedTask == tcs.Task)
                     {
                         _pendingRequests.TryRemove(rq.message.msgsuid, out _);
@@ -176,7 +175,8 @@ namespace Shared.Source.NetDriver.AC
                 return null;
             }
         }
-        public void SendAnsMessageAsync(Socket sock, Message msg)                                // не ожидаем ответа
+
+        public void SendAnsMessageAsync(Socket sock, Message msg)                                   // не ожидаем ответа
         {
             var rq = new Request(msg, sock);
 
@@ -208,8 +208,8 @@ namespace Shared.Source.NetDriver.AC
             {
                 try
                 {
-                    if (processor == null) continue; //                                 процссор должен сам ответить на запрос, если то требуется.
-                    await processor(req);
+                    if (processor == null) continue;                                                // процссор должен сам ответить на запрос, если то требуется.
+                    _backgroundTasks.Add(processor(req));
                 }
                 catch (Exception ex)
                 {
@@ -257,6 +257,32 @@ namespace Shared.Source.NetDriver.AC
                             DebugTool.log.Level.Error,
                             e.Message,
                             LOGFOLDER));
+            }
+        }
+
+        public async Task RemoveCompletedTasksAsync(CancellationToken cancellationToken = default)
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                var tasks = _backgroundTasks.ToArray();
+
+                if (tasks.Length > 0)
+                {
+                    var completedTask = await Task.WhenAny(tasks);
+
+                    var temp = new List<Task>();
+                    while (_backgroundTasks.TryTake(out var task))
+                    {
+                        if (task != completedTask)
+                            temp.Add(task);
+                    }
+                    foreach (var task in temp)
+                        _backgroundTasks.Add(task);
+                }
+                else
+                {
+                    await Task.Delay(100, cancellationToken);
+                }
             }
         }
     }

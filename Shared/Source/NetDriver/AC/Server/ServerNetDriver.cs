@@ -19,7 +19,7 @@ namespace Shared.Source.NetDriver.AC.Server
             ProtocolType.Tcp
         );
 
-        public readonly ConcurrentDictionary<Socket, Task> Users = new();
+        public readonly ConcurrentDictionary<Socket, DisposableListening> Users = new();
         private readonly CancellationTokenSource _cts = new();
         public ServerNetDriver(Func<Request, Task> Processor, IPEndPoint endPoint)
         {
@@ -35,10 +35,11 @@ namespace Shared.Source.NetDriver.AC.Server
 
         private async Task AceptingConnections()
         {
-            while (true)
+            while (!_cts.Token.IsCancellationRequested)
             {
                 var clientConnection = await socket.AcceptAsync(_cts.Token);
-                Users.TryAdd(clientConnection, ListeningSocket(clientConnection));
+                var dl = new DisposableListening();
+                Users.TryAdd(clientConnection, dl.Init(ListeningSocket(clientConnection, dl.Cts.Token)));
             }
         }
 
@@ -51,6 +52,8 @@ namespace Shared.Source.NetDriver.AC.Server
                 {
                     s.Key.Close();
                     s.Key.Dispose();
+                    s.Value.Cts.Cancel();
+                    s.Value.Cts.Dispose();
                 }
                 socket.Close();
                 socket.Dispose();
@@ -60,6 +63,18 @@ namespace Shared.Source.NetDriver.AC.Server
             catch (Exception e)
             {
                 DebugTool.Log(new DebugTool.log(DebugTool.log.Level.Error, e.Message, LOGFOLDER));
+            }
+        }
+
+        public class DisposableListening()
+        {
+            private Task Listening;
+            public readonly CancellationTokenSource Cts = new();
+
+            public DisposableListening Init(Task listening)
+            {
+                Listening = listening;
+                return this;
             }
         }
     }

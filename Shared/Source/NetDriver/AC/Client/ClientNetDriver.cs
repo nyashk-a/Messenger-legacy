@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Shared.Source.NetDriver.AC.Client
@@ -14,12 +15,13 @@ namespace Shared.Source.NetDriver.AC.Client
             SocketType.Stream, 
             ProtocolType.Tcp
         );
+        public readonly CancellationTokenSource Cts = new();
 
-        public ClientNetDriver(IPAddress domain, int port, Func<Request, Task> Processor) 
+        public ClientNetDriver(IPAddress IP, int port, Func<Request, Task> Processor)
         {
-            socket.ConnectAsync(new IPEndPoint(domain, port));
+            socket.Connect(new IPEndPoint(IP, port));
+            _backgroundTasks.Add(ListeningSocket(socket, Cts.Token));
             InitalizeNetDriver();
-            _backgroundTasks.Add(ListeningSocket(socket));
             processor = Processor;
         }
 

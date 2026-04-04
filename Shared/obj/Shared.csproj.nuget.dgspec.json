@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\egorg\\Documents\\GitHub\\Messenger\\Shared\\Shared.csproj": {}
+    "C:\\Users\\suzi\\Documents\\projects\\csP\\Messenger\\Shared\\Shared.csproj": {}
   },
   "projects": {
-    "C:\\Users\\egorg\\Documents\\GitHub\\Messenger\\Shared\\Shared.csproj": {
+    "C:\\Users\\suzi\\Documents\\projects\\csP\\Messenger\\Shared\\Shared.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\egorg\\Documents\\GitHub\\Messenger\\Shared\\Shared.csproj",
+        "projectUniqueName": "C:\\Users\\suzi\\Documents\\projects\\csP\\Messenger\\Shared\\Shared.csproj",
         "projectName": "Shared",
-        "projectPath": "C:\\Users\\egorg\\Documents\\GitHub\\Messenger\\Shared\\Shared.csproj",
-        "packagesPath": "C:\\Users\\egorg\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\egorg\\Documents\\GitHub\\Messenger\\Shared\\obj\\",
+        "projectPath": "C:\\Users\\suzi\\Documents\\projects\\csP\\Messenger\\Shared\\Shared.csproj",
+        "packagesPath": "C:\\Users\\suzi\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\suzi\\Documents\\projects\\csP\\Messenger\\Shared\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\egorg\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\suzi\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -27,9 +27,7 @@
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "C:\\Program Files\\dotnet\\library-packs": {},
-          "C:\\Program Files\\dotnet\\library-packs": {},
-          "https://api.nuget.org/v3/index.json": {},
-          "https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet6/nuget/v3/index.json": {}
+          "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net10.0": {
