@@ -210,3 +210,6 @@ C:\Users\suzi\Documents\projects\csP\Messenger\SharedTests\bin\Release\net10.0\l
 C:\Users\suzi\Documents\projects\csP\Messenger\SharedTests\bin\Release\net10.0\linux-x64\SQLitePCLRaw.core.dll
 C:\Users\suzi\Documents\projects\csP\Messenger\SharedTests\bin\Release\net10.0\linux-x64\SQLitePCLRaw.provider.e_sqlite3.dll
 C:\Users\suzi\Documents\projects\csP\Messenger\SharedTests\bin\Release\net10.0\linux-x64\libe_sqlite3.so
+C:\Users\suzi\Documents\projects\csP\Messenger\SharedTests\bin\Release\net10.0\linux-x64\JabrAPI.dll
+C:\Users\suzi\Documents\projects\csP\Messenger\SharedTests\bin\Release\net10.0\linux-x64\AVcontrol.pdb
+C:\Users\suzi\Documents\projects\csP\Messenger\SharedTests\bin\Release\net10.0\linux-x64\JabrAPI.pdb

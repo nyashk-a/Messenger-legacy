@@ -1,0 +1,5 @@
+C:\Users\suzi\Downloads\ClientBuild\SharedTests.pdb
+C:\Users\suzi\Downloads\ClientBuild\e_sqlite3.dll
+C:\Users\suzi\Downloads\ClientBuild\AVcontrol.pdb
+C:\Users\suzi\Downloads\ClientBuild\Shared.pdb
+C:\Users\suzi\Downloads\ClientBuild\SharedTests.exe

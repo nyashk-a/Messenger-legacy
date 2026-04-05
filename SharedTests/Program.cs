@@ -12,7 +12,7 @@ namespace SharedTests //                          DEMO
 {
     internal class Program
     {
-        public static string SEPARATOR = "~~`:`( •̀ .̫ •́ )✧`:`~~";
+        public static string SEPARATOR = "~~`:`|`:`~~";
         public static async Task Main(string[] args)
         {
             Console.Write("Chose youre role (server (s) or user (u)): ");
@@ -28,29 +28,29 @@ namespace SharedTests //                          DEMO
                     break;
                 case "u":
                     Console.Write("enter youre name: ");
-                    string name = Console.ReadLine();
+                string name = Console.ReadLine();
 
-                    Console.Write("chose connect type (local (l) or global (g)):");
-                    IPAddress ip = IPAddress.Parse("127.0.0.1");
-                    switch (Console.ReadLine())
-                    {
-                        case "l":
-                            ip = IPAddress.Parse("127.0.0.1");
-                            break;
-                        case "g":
-                            Console.WriteLine((await Dns.GetHostAddressesAsync("jabnet.mooo.com"))[0].ToString());
-                            ip = (await Dns.GetHostAddressesAsync("jabnet.mooo.com"))[0];
-                            break;
-                    }
-                    var clin = new ClientNetworking(name, ip);
-
-
-                    ConsoleController.NetworkAcept = clin.SendMsg;
-                    ConsoleController.kill = clin.Shutdown;
-
-                    ConsoleController.Run();
+                Console.Write("chose connect type (local (l) or global (g)):");
+            IPAddress ip = IPAddress.Parse("127.0.0.1");
+                switch (Console.ReadLine())
+            {
+                case "l":
+                    ip = IPAddress.Parse("127.0.0.1");
+                    break;
+                case "g":
+                    Console.WriteLine((await Dns.GetHostAddressesAsync("jabnet.mooo.com"))[0].ToString());
+                        ip = (await Dns.GetHostAddressesAsync("jabnet.mooo.com"))[0];
                     break;
             }
+            var clin = new ClientNetworking(name, ip);
+
+
+                ConsoleController.NetworkAcept = clin.SendMsg;
+                ConsoleController.kill = clin.Shutdown;
+
+                ConsoleController.Run();
+            break;
         }
+    }
     }
 }
