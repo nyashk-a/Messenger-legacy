@@ -312,3 +312,6 @@ MessengerClient/bin/Release/DataIO.dll.config
 MessengerClient/bin/Release/DataIO.xml
 MessengerClient/bin/Release/AVcontrol.dll.config
 MessengerClient/bin/Release/DateTime4b.dll.config
+Shared/obj/Release/net10.0/Shared.GeneratedMSBuildEditorConfig.editorconfig
+Shared/obj/Release/net10.0/Shared.AssemblyInfo.cs
+SharedTests/bin/Release/net10.0/logs.txt
